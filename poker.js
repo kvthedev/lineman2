@@ -808,7 +808,7 @@
         const time = formatTime();
         appendLoungeChatMessage(sender, text.trim(), time, false, true);
 
-        publishNetwork('pocketaces_global_chat_v4', {
+        broadcastRealtime('pocketaces_global_chat_v5', {
             type: 'lounge_chat',
             name: sender,
             text: text.trim(),
@@ -862,9 +862,9 @@
         };
 
         if (isHost) {
-            publishNetwork(`pocketaces_room_${roomCode}_to_clients`, payload);
+            broadcastRealtime(`pocketaces_room_${roomCode}_to_clients`, payload);
         } else {
-            publishNetwork(`pocketaces_room_${roomCode}_to_host`, payload);
+            broadcastRealtime(`pocketaces_room_${roomCode}_to_host`, payload);
         }
     }
 
@@ -927,94 +927,142 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 7: NETWORKING (MQTT over WebSockets)
+    // SECTION 7: REALTIME NETWORK RELAY
     // ═══════════════════════════════════════════════
 
-    const BROKER_URLS = [
-        'wss://broker.emqx.io:8084/mqtt',
-        'wss://broker.hivemq.com:8884/mqtt'
+    const seenMessageIds = new Set();
+    let localChannel = null;
+    let wsRelay = null;
+    let isWsConnected = false;
+
+    const WS_RELAY_URLS = [
+        'wss://relay.damus.io',
+        'wss://nos.lol',
+        'wss://relay.primal.net'
     ];
-    let brokerIndex = 0;
+    let wsRelayIndex = 0;
 
     function initNetworking() {
-        if (mqttClient) return;
-        const brokerUrl = BROKER_URLS[brokerIndex % BROKER_URLS.length];
-
+        // 1. Local BroadcastChannel for instant same-browser / multi-tab synchronization
         try {
-            if (typeof mqtt === 'undefined') {
-                console.warn('MQTT library loading...');
-                setTimeout(initNetworking, 300);
-                return;
+            if (typeof BroadcastChannel !== 'undefined' && !localChannel) {
+                localChannel = new BroadcastChannel('pocketaces_p2p_sync_v5');
+                localChannel.onmessage = e => {
+                    if (e.data && e.data.msgId) {
+                        onIncomingNetworkPayload(e.data);
+                    }
+                };
             }
+        } catch (e) {}
 
-            mqttClient = mqtt.connect(brokerUrl, {
-                keepalive: 30,
-                reconnectPeriod: 2500,
-                connectTimeout: 6000,
-                clientId: 'pa_' + myId + '_' + Math.random().toString(36).substring(2, 6)
-            });
-
-            mqttClient.on('connect', () => {
-                mqttConnected = true;
-                activeSubscriptions.forEach(topic => {
-                    mqttClient.subscribe(topic);
-                });
-                subscribeTopic('pocketaces_global_chat_v4');
-            });
-
-            mqttClient.on('message', (topic, message) => {
-                try {
-                    const data = JSON.parse(message.toString());
-                    handleNetworkMessage(topic, data);
-                } catch (e) {
-                    console.error('Network parse error:', e);
-                }
-            });
-
-            mqttClient.on('error', err => {
-                console.warn('MQTT error on ' + brokerUrl + ':', err);
-            });
-
-            mqttClient.on('close', () => {
-                mqttConnected = false;
-            });
-        } catch (e) {
-            console.error('MQTT setup error:', e);
-        }
+        // 2. Cloud WebSocket for internet sync across different computers/friends
+        connectCloudWebSocket();
     }
 
-    function subscribeTopic(topic) {
-        activeSubscriptions.add(topic);
-        if (mqttClient && mqttConnected) {
-            mqttClient.subscribe(topic);
-        }
-    }
-
-    function unsubscribeTopic(topic) {
-        activeSubscriptions.delete(topic);
-        if (mqttClient && mqttConnected) {
-            mqttClient.unsubscribe(topic);
-        }
-    }
-
-    function publishNetwork(topic, payload) {
-        const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
-        if (!mqttClient || !mqttConnected) {
-            setTimeout(() => {
-                if (mqttClient && mqttConnected) {
-                    mqttClient.publish(topic, payloadStr);
-                }
-            }, 600);
+    function connectCloudWebSocket() {
+        if (wsRelay && (wsRelay.readyState === WebSocket.OPEN || wsRelay.readyState === WebSocket.CONNECTING)) {
             return;
         }
-        mqttClient.publish(topic, payloadStr);
+
+        const relayUrl = WS_RELAY_URLS[wsRelayIndex % WS_RELAY_URLS.length];
+        try {
+            wsRelay = new WebSocket(relayUrl);
+
+            wsRelay.onopen = () => {
+                isWsConnected = true;
+                const subMsg = JSON.stringify([
+                    "REQ",
+                    "pa_sub_" + myId,
+                    { "kinds": [1], "#t": ["pocketaces_poker_v5"] }
+                ]);
+                wsRelay.send(subMsg);
+            };
+
+            wsRelay.onmessage = event => {
+                try {
+                    const parsed = JSON.parse(event.data);
+                    if (Array.isArray(parsed) && parsed[0] === 'EVENT' && parsed[2] && parsed[2].content) {
+                        const payload = JSON.parse(parsed[2].content);
+                        if (payload && payload.msgId) {
+                            onIncomingNetworkPayload(payload);
+                        }
+                    }
+                } catch (e) {}
+            };
+
+            wsRelay.onerror = () => {
+                isWsConnected = false;
+            };
+
+            wsRelay.onclose = () => {
+                isWsConnected = false;
+                wsRelayIndex++;
+                setTimeout(connectCloudWebSocket, 3000);
+            };
+        } catch (e) {
+            wsRelayIndex++;
+            setTimeout(connectCloudWebSocket, 3000);
+        }
     }
 
-    function handleNetworkMessage(topic, data) {
+    function broadcastRealtime(topic, data) {
+        const msgId = myId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+        const payload = {
+            msgId,
+            topic,
+            senderId: myId,
+            timestamp: Date.now(),
+            data
+        };
+
+        seenMessageIds.add(msgId);
+        if (seenMessageIds.size > 1000) {
+            const first = seenMessageIds.values().next().value;
+            seenMessageIds.delete(first);
+        }
+
+        // 1. Broadcast locally
+        if (localChannel) {
+            try { localChannel.postMessage(payload); } catch (e) {}
+        }
+
+        // 2. Broadcast to Cloud WebSocket
+        if (wsRelay && wsRelay.readyState === WebSocket.OPEN) {
+            try {
+                const now = Math.floor(Date.now() / 1000);
+                const nostrEvent = {
+                    id: "ev_" + msgId,
+                    pubkey: "pk_" + myId.padEnd(64, '0'),
+                    created_at: now,
+                    kind: 1,
+                    tags: [["t", "pocketaces_poker_v5"]],
+                    content: JSON.stringify(payload),
+                    sig: "sig_" + msgId
+                };
+                wsRelay.send(JSON.stringify(["EVENT", nostrEvent]));
+            } catch (e) {}
+        }
+    }
+
+    function onIncomingNetworkPayload(payload) {
+        if (!payload || !payload.msgId) return;
+        if (seenMessageIds.has(payload.msgId)) return;
+        seenMessageIds.add(payload.msgId);
+        if (seenMessageIds.size > 1000) {
+            const first = seenMessageIds.values().next().value;
+            seenMessageIds.delete(first);
+        }
+
+        handleNetworkMessage(payload.topic, payload.data, payload.senderId);
+    }
+
+    function handleNetworkMessage(topic, data, senderId) {
         // 1. Global Lounge Chat
-        if (topic === 'pocketaces_global_chat_v4') {
-            if (data.type === 'lounge_chat') {
-                appendLoungeChatMessage(data.name, data.text, data.time, !!data.isSystem, data.senderId === myId);
+        if (topic === 'pocketaces_global_chat_v5') {
+            if (data && data.type === 'lounge_chat') {
+                if (data.senderId !== myId) {
+                    appendLoungeChatMessage(data.name, data.text, data.time, !!data.isSystem, false);
+                }
             }
             return;
         }
@@ -1023,18 +1071,18 @@
 
         // 2. Host receiving join request from players
         if (isHost && topic === `pocketaces_room_${roomCode}_join`) {
-            if (data.type === 'join') {
+            if (data && data.type === 'join') {
                 if (data.id === myId) return;
 
                 if (gameState.players.length >= MAX_PLAYERS) {
-                    publishNetwork(`pocketaces_room_${roomCode}_client_${data.id}`, {
+                    broadcastRealtime(`pocketaces_room_${roomCode}_client_${data.id}`, {
                         type: 'error',
                         message: 'Table is full (max 12 players).'
                     });
                     return;
                 }
                 if (gameState.phase !== 'lobby') {
-                    publishNetwork(`pocketaces_room_${roomCode}_client_${data.id}`, {
+                    broadcastRealtime(`pocketaces_room_${roomCode}_client_${data.id}`, {
                         type: 'error',
                         message: 'Hand in progress. Please wait for next hand.'
                     });
@@ -1054,13 +1102,13 @@
 
         // 3. Host receiving player action, in-game chat, or leave message
         if (isHost && topic === `pocketaces_room_${roomCode}_to_host`) {
-            if (data.type === 'action') {
+            if (data && data.type === 'action') {
                 handlePlayerAction(data.playerId, data.action, data.amount);
-            } else if (data.type === 'chat') {
+            } else if (data && data.type === 'chat') {
                 appendGameChatMessage(data.name, data.text, data.time, data.isSystem, data.senderId === myId, data.senderId);
                 if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
-                publishNetwork(`pocketaces_room_${roomCode}_to_clients`, data);
-            } else if (data.type === 'leave') {
+                broadcastRealtime(`pocketaces_room_${roomCode}_to_clients`, data);
+            } else if (data && data.type === 'leave') {
                 showToast(`${data.name} left the table`, 'info');
                 sendGameChatMessage('♠ Dealer', `${data.name} left the table.`, true);
                 removePlayer(data.id);
@@ -1071,9 +1119,9 @@
 
         // 4. Client receiving private view state or errors from host
         if (!isHost && topic === `pocketaces_room_${roomCode}_client_${myId}`) {
-            if (data.type === 'state') {
+            if (data && data.type === 'state') {
                 handleIncomingState(data);
-            } else if (data.type === 'error') {
+            } else if (data && data.type === 'error') {
                 showToast(data.message, 'error');
             }
             return;
@@ -1081,9 +1129,9 @@
 
         // 5. Client receiving general broadcast messages (chat or public state)
         if (!isHost && topic === `pocketaces_room_${roomCode}_to_clients`) {
-            if (data.type === 'state') {
+            if (data && data.type === 'state') {
                 handleIncomingState(data);
-            } else if (data.type === 'chat') {
+            } else if (data && data.type === 'chat') {
                 if (data.senderId !== myId) {
                     appendGameChatMessage(data.name, data.text, data.time, data.isSystem, false, data.senderId);
                     if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
@@ -1112,9 +1160,6 @@
         initGameState();
         addPlayer(myId, myName, false);
 
-        subscribeTopic(`pocketaces_room_${roomCode}_join`);
-        subscribeTopic(`pocketaces_room_${roomCode}_to_host`);
-
         viewState = makeViewState(myId);
         renderFromViewState();
         showScreen('game');
@@ -1126,9 +1171,6 @@
         roomCode = code.toUpperCase();
         isHost = false;
 
-        subscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
-        subscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
-
         return new Promise((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 8;
@@ -1136,7 +1178,7 @@
 
             const sendJoinPing = () => {
                 if (resolved) return;
-                publishNetwork(`pocketaces_room_${roomCode}_join`, {
+                broadcastRealtime(`pocketaces_room_${roomCode}_join`, {
                     type: 'join',
                     name: myName,
                     id: myId
@@ -1153,7 +1195,6 @@
                 return false;
             };
 
-            // Send immediate join ping
             sendJoinPing();
 
             const interval = setInterval(() => {
@@ -1165,8 +1206,6 @@
                 if (attempts >= maxAttempts) {
                     clearInterval(interval);
                     if (!resolved) {
-                        unsubscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
-                        unsubscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
                         roomCode = '';
                         reject(new Error('Table not found. Check the room code and try again.'));
                     }
@@ -1191,7 +1230,7 @@
                 }
                 renderFromViewState();
             } else if (!player.isBot) {
-                publishNetwork(`pocketaces_room_${roomCode}_client_${player.id}`, view);
+                broadcastRealtime(`pocketaces_room_${roomCode}_client_${player.id}`, view);
             }
         }
     }
@@ -1238,7 +1277,7 @@
         if (isHost) {
             handlePlayerAction(myId, action, amount || 0);
         } else {
-            publishNetwork(`pocketaces_room_${roomCode}_to_host`, {
+            broadcastRealtime(`pocketaces_room_${roomCode}_to_host`, {
                 type: 'action',
                 playerId: myId,
                 action,
@@ -1250,16 +1289,12 @@
     function resetToLanding() {
         if (roomCode) {
             if (!isHost) {
-                publishNetwork(`pocketaces_room_${roomCode}_to_host`, {
+                broadcastRealtime(`pocketaces_room_${roomCode}_to_host`, {
                     type: 'leave',
                     id: myId,
                     name: myName
                 });
             }
-            unsubscribeTopic(`pocketaces_room_${roomCode}_join`);
-            unsubscribeTopic(`pocketaces_room_${roomCode}_to_host`);
-            unsubscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
-            unsubscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
         }
         roomCode = '';
         isHost = false;
