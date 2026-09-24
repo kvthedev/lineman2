@@ -1,0 +1,17 @@
+{
+  "name": "pocket-aces-poker",
+  "version": "1.0.0",
+  "description": "Multiplayer Texas Hold'em Poker Game with Node.js & Socket.io",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["poker", "texas-holdem", "socketio", "multiplayer"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

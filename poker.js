@@ -29,11 +29,221 @@
         'Bot Luna', 'Bot Jasper', 'Bot Hunter', 'Bot Chloe',
         'Bot Duke', 'Bot Bella', 'Bot Jax', 'Bot Ruby'
     ];
-    const AVATAR_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00cec9','#6c5ce7','#fd79a8','#fdcb6e'];
+
+    const CHARACTER_PRESETS = [
+        {
+            id: 'preset_maverick',
+            name: 'The Maverick',
+            bg: 'linear-gradient(135deg, #e67e22, #d35400)',
+            skin: '#d89b6c',
+            hairStyle: 'cowboy_hat',
+            hairColor: '#4a2c1b',
+            glasses: 'aviator',
+            facialHair: 'stubble',
+            outfit: 'leather'
+        },
+        {
+            id: 'preset_highroller',
+            name: 'High Roller',
+            bg: 'linear-gradient(135deg, #2d3436, #1e272e)',
+            skin: '#f5c29a',
+            hairStyle: 'slick',
+            hairColor: '#1b1b1b',
+            glasses: 'shades',
+            facialHair: 'none',
+            outfit: 'tuxedo'
+        },
+        {
+            id: 'preset_duchess',
+            name: 'The Duchess',
+            bg: 'linear-gradient(135deg, #8e44ad, #6c5ce7)',
+            skin: '#ffd5b5',
+            hairStyle: 'tiara',
+            hairColor: '#d4ac0d',
+            glasses: 'none',
+            facialHair: 'none',
+            outfit: 'crimson_suit'
+        },
+        {
+            id: 'preset_cardshark',
+            name: 'Card Shark',
+            bg: 'linear-gradient(135deg, #0984e3, #00cec9)',
+            skin: '#c68642',
+            hairStyle: 'fade',
+            hairColor: '#00cec9',
+            glasses: 'visor',
+            facialHair: 'goatee',
+            outfit: 'cyber_jacket'
+        },
+        {
+            id: 'preset_gentleman',
+            name: 'The Gentleman',
+            bg: 'linear-gradient(135deg, #2c3e50, #1a252f)',
+            skin: '#ffd5b5',
+            hairStyle: 'parted',
+            hairColor: '#bdc3c7',
+            glasses: 'monocle',
+            facialHair: 'mustache',
+            outfit: 'tuxedo'
+        },
+        {
+            id: 'preset_vipqueen',
+            name: 'VIP Queen',
+            bg: 'linear-gradient(135deg, #10ac84, #1dd1a1)',
+            skin: '#8d5524',
+            hairStyle: 'ponytail',
+            hairColor: '#1b1b1b',
+            glasses: 'designer',
+            facialHair: 'none',
+            outfit: 'gold_suit'
+        },
+        {
+            id: 'preset_thedon',
+            name: 'The Don',
+            bg: 'linear-gradient(135deg, #3d0c1e, #111111)',
+            skin: '#c68642',
+            hairStyle: 'fedora',
+            hairColor: '#1b1b1b',
+            glasses: 'shades',
+            facialHair: 'stubble',
+            outfit: 'crimson_suit'
+        },
+        {
+            id: 'preset_gambler',
+            name: 'The Gambler',
+            bg: 'linear-gradient(135deg, #f39c12, #e67e22)',
+            skin: '#d89b6c',
+            hairStyle: 'pompadour',
+            hairColor: '#4a2c1b',
+            glasses: 'aviator',
+            facialHair: 'beard',
+            outfit: 'hawaiian'
+        },
+        {
+            id: 'preset_detective',
+            name: 'The Detective',
+            bg: 'linear-gradient(135deg, #4b6584, #2c3e50)',
+            skin: '#f5c29a',
+            hairStyle: 'fedora',
+            hairColor: '#4a2c1b',
+            glasses: 'designer',
+            facialHair: 'stubble',
+            outfit: 'leather'
+        },
+        {
+            id: 'preset_neonrebel',
+            name: 'Neon Rebel',
+            bg: 'linear-gradient(135deg, #e84393, #6c5ce7)',
+            skin: '#4a2c11',
+            hairStyle: 'beanie',
+            hairColor: '#9b59b6',
+            glasses: 'shades',
+            facialHair: 'goatee',
+            outfit: 'hoodie'
+        },
+        {
+            id: 'preset_silverfox',
+            name: 'Silver Fox',
+            bg: 'linear-gradient(135deg, #f1c40f, #f39c12)',
+            skin: '#c68642',
+            hairStyle: 'slick',
+            hairColor: '#bdc3c7',
+            glasses: 'designer',
+            facialHair: 'goatee',
+            outfit: 'gold_suit'
+        },
+        {
+            id: 'preset_baron',
+            name: 'The Baron',
+            bg: 'linear-gradient(135deg, #b71540, #0c2461)',
+            skin: '#f5c29a',
+            hairStyle: 'top_hat',
+            hairColor: '#1b1b1b',
+            glasses: 'monocle',
+            facialHair: 'mustache',
+            outfit: 'dealer_vest'
+        }
+    ];
+
+    const SWATCHES = {
+        skins: [
+            { color: '#ffd5b5', name: 'Fair Porcelain' },
+            { color: '#f5c29a', name: 'Warm Light' },
+            { color: '#d89b6c', name: 'Tan Sand' },
+            { color: '#c68642', name: 'Golden Bronze' },
+            { color: '#8d5524', name: 'Warm Chestnut' },
+            { color: '#4a2c11', name: 'Deep Espresso' }
+        ],
+        hairStyles: [
+            { id: 'pompadour', name: 'Pompadour', icon: '💈' },
+            { id: 'slick', name: 'Slick Back', icon: '✨' },
+            { id: 'parted', name: 'Side Part', icon: '💼' },
+            { id: 'fade', name: 'Fade Cut', icon: '✂️' },
+            { id: 'curly', name: 'Curly Waves', icon: '🌀' },
+            { id: 'long', name: 'Long Locks', icon: '🌊' },
+            { id: 'ponytail', name: 'Ponytail', icon: '🎀' },
+            { id: 'buzz', name: 'Buzz Cut', icon: '⚡' },
+            { id: 'cowboy_hat', name: 'Cowboy Hat', icon: '🤠' },
+            { id: 'fedora', name: 'Noir Fedora', icon: '🕵️' },
+            { id: 'top_hat', name: 'Top Hat', icon: '🎩' },
+            { id: 'beanie', name: 'Street Beanie', icon: '🧢' },
+            { id: 'tiara', name: 'Royal Tiara', icon: '👑' }
+        ],
+        hairColors: [
+            { color: '#1b1b1b', name: 'Obsidian Black' },
+            { color: '#4a2c1b', name: 'Chestnut Brown' },
+            { color: '#d4ac0d', name: 'Golden Blonde' },
+            { color: '#962d1c', name: 'Auburn Copper' },
+            { color: '#bdc3c7', name: 'Platinum Silver' },
+            { color: '#00cec9', name: 'Cyber Cyan' },
+            { color: '#9b59b6', name: 'Neon Purple' }
+        ],
+        glasses: [
+            { id: 'none', name: 'None', icon: '👁️' },
+            { id: 'aviator', name: 'Aviator Gold', icon: '🕶️' },
+            { id: 'shades', name: 'VIP Shades', icon: '😎' },
+            { id: 'designer', name: 'Round Wire', icon: '👓' },
+            { id: 'monocle', name: 'Gold Monocle', icon: '🧐' },
+            { id: 'visor', name: 'Cyber Visor', icon: '🥽' }
+        ],
+        facialHair: [
+            { id: 'none', name: 'Clean Shaven', icon: '🪒' },
+            { id: 'stubble', name: '5 O’Clock Stubble', icon: '🧔' },
+            { id: 'beard', name: 'Full Groomed Beard', icon: '🧔‍♂️' },
+            { id: 'goatee', name: 'Sculpted Goatee', icon: '⚡' },
+            { id: 'mustache', name: 'Gentleman Mustache', icon: '🥸' }
+        ],
+        outfits: [
+            { id: 'tuxedo', name: 'Black Tuxedo', icon: '🤵' },
+            { id: 'crimson_suit', name: 'Crimson Velvet', icon: '🍷' },
+            { id: 'gold_suit', name: 'Gold Silk Suit', icon: '🥇' },
+            { id: 'leather', name: 'Biker Leather', icon: '🏍️' },
+            { id: 'hoodie', name: 'Streetwear Hoodie', icon: '🧥' },
+            { id: 'hawaiian', name: 'Casino Resort Shirt', icon: '🌺' },
+            { id: 'dealer_vest', name: 'Dealer Vest', icon: '♠️' },
+            { id: 'cyber_jacket', name: 'Cyber Jacket', icon: '⚡' }
+        ]
+    };
+
+    function loadSavedAvatar() {
+        try {
+            const saved = localStorage.getItem('poker_avatar');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.skin || parsed.hairStyle) return parsed;
+                    const found = CHARACTER_PRESETS.find(a => a.id === parsed.id);
+                    if (found) return found;
+                }
+            }
+        } catch (e) {}
+        return Object.assign({}, CHARACTER_PRESETS[0]);
+    }
 
     // ─── APPLICATION STATE ─────────────────────────
     let myId     = 'p_' + Math.random().toString(36).substring(2, 9);
     let myName   = '';
+    let myAvatar = loadSavedAvatar();
     let isHost   = false;
     let roomCode = '';
 
@@ -214,13 +424,613 @@
         return bd;
     }
 
-    function getAvatar(name) {
+    function shadeColor(color, percent) {
+        if (!color || typeof color !== 'string' || !color.startsWith('#')) return color || '#111111';
+        let num = parseInt(color.slice(1), 16);
+        if (color.length === 4) {
+            num = parseInt(color[1]+color[1]+color[2]+color[2]+color[3]+color[3], 16);
+        }
+        let r = (num >> 16) + Math.round(255 * (percent / 100));
+        let g = ((num >> 8) & 0x00FF) + Math.round(255 * (percent / 100));
+        let b = (num & 0x0000FF) + Math.round(255 * (percent / 100));
+        r = Math.min(255, Math.max(0, r));
+        g = Math.min(255, Math.max(0, g));
+        b = Math.min(255, Math.max(0, b));
+        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function generate2DAvatarSVG(cfg = {}, size = 64) {
+        const skin = cfg.skin || '#f5c29a';
+        const darkSkin = shadeColor(skin, -22);
+        const hairColor = cfg.hairColor || '#1b1b1b';
+        const darkHair = shadeColor(hairColor, -25);
+        const highlightColor = shadeColor(hairColor, 35);
+        const hairStyle = cfg.hairStyle || 'slick';
+        const glasses = cfg.glasses || 'none';
+        const facialHair = cfg.facialHair || 'none';
+        const outfit = cfg.outfit || 'tuxedo';
+        const uid = 'av_' + Math.random().toString(36).substring(2, 8);
+
+        // Outfit SVG layer
+        let outfitSvg = '';
+        if (outfit === 'tuxedo') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#181a20"/>
+                <polygon points="42,68 58,68 50,92" fill="#ffffff"/>
+                <polygon points="35,68 44,68 50,88 38,88" fill="#282a32"/>
+                <polygon points="65,68 56,68 50,88 62,88" fill="#282a32"/>
+                <polygon points="44,70 50,73 44,76" fill="#111"/><polygon points="56,70 50,73 56,76" fill="#111"/><circle cx="50" cy="73" r="2.2" fill="#111"/>
+                <circle cx="50" cy="81" r="1.3" fill="#f1c40f"/><circle cx="50" cy="87" r="1.3" fill="#f1c40f"/>
+            `;
+        } else if (outfit === 'crimson_suit') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#800f2f"/>
+                <polygon points="35,68 45,68 50,90 38,90" fill="#a4133c"/>
+                <polygon points="65,68 55,68 50,90 62,90" fill="#a4133c"/>
+                <polygon points="43,68 57,68 50,85" fill="#1e1e24"/>
+                <polygon points="48,70 52,70 50,82" fill="#d90429"/>
+                <circle cx="40" cy="75" r="1.8" fill="#ffd700"/>
+            `;
+        } else if (outfit === 'gold_suit') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#c59b27"/>
+                <polygon points="35,68 45,68 50,90 37,90" fill="#dfb135"/>
+                <polygon points="65,68 55,68 50,90 63,90" fill="#dfb135"/>
+                <path d="M 40 68 C 40 64, 60 64, 60 68 L 56 86 L 44 86 Z" fill="#151515"/>
+                <path d="M 44 72 Q 50 82 56 72" stroke="#ffd700" stroke-width="1.8" fill="none"/>
+            `;
+        } else if (outfit === 'leather') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#212529"/>
+                <path d="M 33 70 L 45 78 L 38 88 Z" fill="#343a40"/>
+                <path d="M 67 70 L 55 78 L 62 88 Z" fill="#343a40"/>
+                <path d="M 43 68 L 57 68 L 50 80 Z" fill="#495057"/>
+                <line x1="48" y1="78" x2="48" y2="100" stroke="#ced4da" stroke-width="1.5" stroke-dasharray="2,1"/>
+            `;
+        } else if (outfit === 'hoodie') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#2b3a4a"/>
+                <path d="M 36 66 C 36 60, 64 60, 64 66 C 64 74, 36 74, 36 66 Z" fill="#1e2733"/>
+                <path d="M 45 70 Q 43 78 44 86" stroke="#ffffff" stroke-width="1.2" fill="none"/>
+                <path d="M 55 70 Q 57 78 56 86" stroke="#ffffff" stroke-width="1.2" fill="none"/>
+            `;
+        } else if (outfit === 'hawaiian') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#087e8b"/>
+                <polygon points="44,68 56,68 50,82" fill="${skin}"/>
+                <circle cx="28" cy="84" r="3.5" fill="#ff5a5f" opacity="0.8"/>
+                <circle cx="72" cy="86" r="3.5" fill="#f5a623" opacity="0.8"/>
+                <circle cx="38" cy="94" r="3" fill="#ffeaa7" opacity="0.8"/>
+                <circle cx="62" cy="92" r="3.5" fill="#ff5a5f" opacity="0.8"/>
+            `;
+        } else if (outfit === 'dealer_vest') {
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#ffffff"/>
+                <path d="M 22 100 L 28 72 L 44 72 L 50 86 L 56 72 L 72 72 L 78 100 Z" fill="#2b0a16"/>
+                <polygon points="44,68 50,71 44,74" fill="#111"/><polygon points="56,68 50,71 56,74" fill="#111"/><circle cx="50" cy="71" r="2" fill="#111"/>
+                <path d="M 52 82 Q 62 86 64 78" stroke="#ffd700" stroke-width="1.2" fill="none"/>
+            `;
+        } else {
+            // cyber_jacket
+            outfitSvg = `
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#101820"/>
+                <path d="M 34 68 L 38 60 L 62 60 L 66 68 Z" fill="#1a2634" stroke="#00cec9" stroke-width="1.2"/>
+                <line x1="28" y1="80" x2="44" y2="100" stroke="#fd79a8" stroke-width="1.5"/>
+                <line x1="72" y1="80" x2="56" y2="100" stroke="#00cec9" stroke-width="1.5"/>
+            `;
+        }
+
+        // Facial hair layer
+        let facialHairSvg = '';
+        if (facialHair === 'stubble') {
+            facialHairSvg = `
+                <path d="M 34 52 C 34 63, 40 66, 50 66.5 C 60 66.5, 66 63, 66 52 C 63 56, 56 59, 50 59 C 44 59, 37 56, 34 52 Z" fill="#000000" opacity="0.18"/>
+            `;
+        } else if (facialHair === 'beard') {
+            facialHairSvg = `
+                <path d="M 32 48 C 32 64, 40 69, 50 69.5 C 60 69.5, 68 64, 68 48 C 65 54, 60 64, 50 64 C 40 64, 35 54, 32 48 Z" fill="${hairColor}"/>
+                <path d="M 42 53 Q 50 50 58 53 Q 50 55 42 53 Z" fill="${hairColor}"/>
+            `;
+        } else if (facialHair === 'goatee') {
+            facialHairSvg = `
+                <path d="M 43 53 Q 50 51 57 53 Q 50 55 43 53 Z" fill="${hairColor}"/>
+                <path d="M 45 58 C 45 66, 47 68.5, 50 68.5 C 53 68.5, 55 66, 55 58 Q 50 61 45 58 Z" fill="${hairColor}"/>
+            `;
+        } else if (facialHair === 'mustache') {
+            facialHairSvg = `
+                <path d="M 41 53 Q 45 49 50 53 Q 55 49 59 53 Q 55 56 50 54.5 Q 45 56 41 53 Z" fill="${hairColor}"/>
+            `;
+        }
+
+        // Hair / Hat layer
+        let hairSvg = '';
+        if (hairStyle === 'pompadour') {
+            hairSvg = `
+                <path d="M 30 35 C 28 14, 38 6, 50 5 C 62 6, 72 14, 70 35 C 65 26, 58 24, 50 25 C 42 24, 35 26, 30 35 Z" fill="${hairColor}"/>
+                <path d="M 42 10 Q 50 7 58 10" stroke="${highlightColor}" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.5"/>
+            `;
+        } else if (hairStyle === 'slick') {
+            hairSvg = `
+                <path d="M 29 36 C 29 16, 40 10, 50 10 C 60 10, 71 16, 71 36 C 68 28, 60 26, 50 26 C 40 26, 32 28, 29 36 Z" fill="${hairColor}"/>
+                <path d="M 40 14 Q 50 12 60 14" stroke="${highlightColor}" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+            `;
+        } else if (hairStyle === 'parted') {
+            hairSvg = `
+                <path d="M 29 36 C 28 15, 42 9, 50 9 C 64 9, 71 17, 71 36 C 67 27, 56 25, 48 25 C 38 25, 32 28, 29 36 Z" fill="${hairColor}"/>
+                <line x1="42" y1="12" x2="44" y2="25" stroke="${darkHair}" stroke-width="1.5"/>
+            `;
+        } else if (hairStyle === 'fade') {
+            hairSvg = `
+                <path d="M 29 36 C 29 20, 38 12, 50 12 C 62 12, 71 20, 71 36 C 68 30, 62 27, 50 27 C 38 27, 32 30, 29 36 Z" fill="${hairColor}"/>
+                <rect x="29" y="32" width="4" height="14" fill="${hairColor}" opacity="0.4"/>
+                <rect x="67" y="32" width="4" height="14" fill="${hairColor}" opacity="0.4"/>
+            `;
+        } else if (hairStyle === 'curly') {
+            hairSvg = `
+                <path d="M 28 36 C 26 14, 36 6, 50 6 C 64 6, 74 14, 72 36 C 68 32, 64 26, 58 28 C 52 24, 46 25, 42 28 C 36 26, 32 32, 28 36 Z" fill="${hairColor}"/>
+                <circle cx="36" cy="18" r="5" fill="${hairColor}"/>
+                <circle cx="48" cy="12" r="6" fill="${hairColor}"/>
+                <circle cx="60" cy="16" r="5.5" fill="${hairColor}"/>
+                <circle cx="68" cy="24" r="5" fill="${hairColor}"/>
+                <circle cx="32" cy="25" r="5" fill="${hairColor}"/>
+            `;
+        } else if (hairStyle === 'long') {
+            hairSvg = `
+                <path d="M 28 36 C 26 14, 36 8, 50 8 C 64 8, 74 14, 72 36 C 76 50, 75 75, 73 82 C 68 82, 67 65, 68 48 C 66 32, 58 26, 50 26 C 42 26, 34 32, 32 48 C 33 65, 32 82, 27 82 C 25 75, 24 50, 28 36 Z" fill="${hairColor}"/>
+            `;
+        } else if (hairStyle === 'ponytail') {
+            hairSvg = `
+                <path d="M 29 36 C 29 16, 40 10, 50 10 C 60 10, 71 16, 71 36 C 67 28, 60 26, 50 26 C 40 26, 33 28, 29 36 Z" fill="${hairColor}"/>
+                <ellipse cx="50" cy="6" rx="8" ry="7" fill="${hairColor}"/>
+                <circle cx="50" cy="11" r="3" fill="#e74c3c"/>
+            `;
+        } else if (hairStyle === 'buzz') {
+            hairSvg = `
+                <path d="M 30 36 C 30 18, 38 12, 50 12 C 62 12, 70 18, 70 36 C 67 30, 60 27, 50 27 C 40 27, 33 30, 30 36 Z" fill="${hairColor}" opacity="0.85"/>
+            `;
+        } else if (hairStyle === 'cowboy_hat') {
+            hairSvg = `
+                <path d="M 30 36 C 30 25, 70 25, 70 36 Z" fill="${hairColor}"/>
+                <path d="M 12 36 C 26 31, 74 31, 88 36 C 78 41, 22 41, 12 36 Z" fill="#8d5524"/>
+                <path d="M 32 35 C 32 14, 43 19, 50 14 C 57 19, 68 14, 68 35 Z" fill="#6f3d17"/>
+                <path d="M 31 34 C 40 32, 60 32, 69 34 L 69 36 C 60 34, 40 34, 31 36 Z" fill="#3a1e0b"/>
+                <circle cx="50" cy="34" r="2" fill="#f1c40f"/>
+            `;
+        } else if (hairStyle === 'fedora') {
+            hairSvg = `
+                <path d="M 30 36 C 30 25, 70 25, 70 36 Z" fill="${hairColor}"/>
+                <path d="M 15 35 C 28 30, 72 30, 85 35 C 75 40, 25 40, 15 35 Z" fill="#2c3e50"/>
+                <path d="M 31 34 C 31 16, 42 20, 50 16 C 58 20, 69 16, 69 34 Z" fill="#1e272e"/>
+                <rect x="31" y="30" width="38" height="4" fill="#e74c3c"/>
+            `;
+        } else if (hairStyle === 'top_hat') {
+            hairSvg = `
+                <path d="M 30 36 C 30 25, 70 25, 70 36 Z" fill="${hairColor}"/>
+                <ellipse cx="50" cy="34" rx="28" ry="4.5" fill="#1e272e"/>
+                <path d="M 32 34 L 33 8 L 67 8 L 68 34 Z" fill="#111111"/>
+                <ellipse cx="50" cy="8" rx="17" ry="2.5" fill="#2c3e50"/>
+                <rect x="32" y="27" width="36" height="5" fill="#c0392b"/>
+            `;
+        } else if (hairStyle === 'beanie') {
+            hairSvg = `
+                <path d="M 28 35 C 27 10, 73 10, 72 35 Z" fill="#e17055"/>
+                <rect x="26" y="30" width="48" height="8" rx="3" fill="#d63031"/>
+                <line x1="32" y1="30" x2="32" y2="38" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+                <line x1="41" y1="30" x2="41" y2="38" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+                <line x1="50" y1="30" x2="50" y2="38" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+                <line x1="59" y1="30" x2="59" y2="38" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+                <line x1="68" y1="30" x2="68" y2="38" stroke="rgba(0,0,0,0.15)" stroke-width="1.2"/>
+            `;
+        } else if (hairStyle === 'tiara') {
+            hairSvg = `
+                <path d="M 29 36 C 29 16, 40 10, 50 10 C 60 10, 71 16, 71 36 C 67 28, 60 26, 50 26 C 40 26, 33 28, 29 36 Z" fill="${hairColor}"/>
+                <path d="M 35 24 L 38 18 L 44 23 L 50 13 L 56 23 L 62 18 L 65 24 Z" fill="#ffd700" stroke="#b8860b" stroke-width="0.8"/>
+                <circle cx="50" cy="17" r="1.8" fill="#e74c3c"/>
+                <circle cx="38" cy="20" r="1.2" fill="#00cec9"/>
+                <circle cx="62" cy="20" r="1.2" fill="#00cec9"/>
+            `;
+        }
+
+        // Glasses layer
+        let glassesSvg = '';
+        if (glasses === 'aviator') {
+            glassesSvg = `
+                <path d="M 34 40 C 34 38, 48 38, 48 40 L 47 47 C 46 50, 36 50, 35 47 Z" fill="rgba(30,30,30,0.75)" stroke="#ffd700" stroke-width="1.4"/>
+                <path d="M 52 40 C 52 38, 66 38, 66 40 L 65 47 C 64 50, 54 50, 53 47 Z" fill="rgba(30,30,30,0.75)" stroke="#ffd700" stroke-width="1.4"/>
+                <line x1="47" y1="41" x2="53" y2="41" stroke="#ffd700" stroke-width="1.5"/>
+                <line x1="38" y1="37" x2="62" y2="37" stroke="#ffd700" stroke-width="1.2"/>
+            `;
+        } else if (glasses === 'shades') {
+            glassesSvg = `
+                <polygon points="32,38 48,38 46,48 34,48" fill="#111111" stroke="#333333" stroke-width="1.2"/>
+                <polygon points="52,38 68,38 66,48 54,48" fill="#111111" stroke="#333333" stroke-width="1.2"/>
+                <line x1="47" y1="40" x2="53" y2="40" stroke="#111111" stroke-width="2.5"/>
+                <polygon points="34,40 46,40 42,46 36,46" fill="rgba(255,255,255,0.18)"/>
+            `;
+        } else if (glasses === 'designer') {
+            glassesSvg = `
+                <circle cx="41.5" cy="43" r="6" fill="rgba(255,255,255,0.15)" stroke="#c5a059" stroke-width="1.6"/>
+                <circle cx="58.5" cy="43" r="6" fill="rgba(255,255,255,0.15)" stroke="#c5a059" stroke-width="1.6"/>
+                <line x1="47.5" y1="43" x2="52.5" y2="43" stroke="#c5a059" stroke-width="1.5"/>
+            `;
+        } else if (glasses === 'monocle') {
+            glassesSvg = `
+                <circle cx="58.5" cy="43" r="6.5" fill="rgba(255,255,255,0.22)" stroke="#ffd700" stroke-width="1.8"/>
+                <path d="M 65 43 Q 70 56 62 68" stroke="#ffd700" stroke-width="1" fill="none"/>
+            `;
+        } else if (glasses === 'visor') {
+            glassesSvg = `
+                <polygon points="28,39 72,39 69,47 31,47" fill="#00cec9" opacity="0.85" stroke="#00ffff" stroke-width="1.2"/>
+                <line x1="30" y1="43" x2="70" y2="43" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+            `;
+        }
+
+        return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" class="avatar-2d-svg">
+            <defs>
+                <clipPath id="${uid}_c"><circle cx="50" cy="50" r="48"/></clipPath>
+            </defs>
+            <g clip-path="url(#${uid}_c)">
+                <!-- Soft top glow -->
+                <circle cx="50" cy="30" r="48" fill="#ffffff" fill-opacity="0.1"/>
+
+                <!-- Shoulders & Outfit -->
+                <g class="layer-outfit">${outfitSvg}</g>
+
+                <!-- Neck -->
+                <path d="M 43 54 L 43 70 C 47 73, 53 73, 57 70 L 57 54 Z" fill="${darkSkin}"/>
+
+                <!-- Ears -->
+                <ellipse cx="29" cy="46" rx="4" ry="6.5" fill="${skin}"/>
+                <ellipse cx="71" cy="46" rx="4" ry="6.5" fill="${skin}"/>
+                <ellipse cx="29" cy="46" rx="2" ry="3.5" fill="${darkSkin}" opacity="0.6"/>
+                <ellipse cx="71" cy="46" rx="2" ry="3.5" fill="${darkSkin}" opacity="0.6"/>
+
+                <!-- Head / Face -->
+                <path d="M 31 38 C 31 18, 69 18, 69 38 C 69 57, 63 67, 50 67 C 37 67, 31 57, 31 38 Z" fill="${skin}"/>
+
+                <!-- Eyes & Eyebrows -->
+                <ellipse cx="41.5" cy="43" rx="3.5" ry="2.6" fill="#ffffff"/>
+                <ellipse cx="41.5" cy="43" rx="2" ry="2.3" fill="#1a252f"/>
+                <circle cx="42.3" cy="42.2" r="0.8" fill="#ffffff"/>
+
+                <ellipse cx="58.5" cy="43" rx="3.5" ry="2.6" fill="#ffffff"/>
+                <ellipse cx="58.5" cy="43" rx="2" ry="2.3" fill="#1a252f"/>
+                <circle cx="59.3" cy="42.2" r="0.8" fill="#ffffff"/>
+
+                <path d="M 37 37 Q 41.5 33.5 46.5 37" stroke="${hairColor}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+                <path d="M 53.5 37 Q 58.5 33.5 63 37" stroke="${hairColor}" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+
+                <!-- Nose -->
+                <path d="M 49 44 Q 50.5 49.5 52.5 49" stroke="${darkSkin}" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+                <!-- Mouth -->
+                <path d="M 44.5 56 Q 50 59.5 55.5 56" stroke="#7a2e2e" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <path d="M 47 60 Q 50 61.5 53 60" stroke="${darkSkin}" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+                <!-- Facial Hair -->
+                <g class="layer-facial-hair">${facialHairSvg}</g>
+
+                <!-- Hair / Hat -->
+                <g class="layer-hair">${hairSvg}</g>
+
+                <!-- Glasses / Accessories -->
+                <g class="layer-glasses">${glassesSvg}</g>
+            </g>
+        </svg>`;
+    }
+
+    function generateDealerSVG(size = 48) {
+        const uid = 'dealer_' + Math.random().toString(36).substring(2, 8);
+        return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" class="dealer-2d-svg">
+            <defs>
+                <clipPath id="${uid}_c"><circle cx="50" cy="50" r="48"/></clipPath>
+            </defs>
+            <g clip-path="url(#${uid}_c)">
+                <!-- Dealer Outfit (Formal Casino Uniform) -->
+                <path d="M 15 100 C 15 72, 32 68, 50 68 C 68 68, 85 72, 85 100 Z" fill="#ffffff"/>
+                <path d="M 22 100 L 28 72 L 44 72 L 50 86 L 56 72 L 72 72 L 78 100 Z" fill="#3b0918"/>
+                <polygon points="44,68 50,71 44,74" fill="#111"/><polygon points="56,68 50,71 56,74" fill="#111"/><circle cx="50" cy="71" r="2" fill="#111"/>
+                <rect x="62" y="76" width="10" height="4" rx="1" fill="#f1c40f"/>
+                <line x1="63" y1="78" x2="71" y2="78" stroke="#111" stroke-width="0.8"/>
+
+                <!-- Neck -->
+                <path d="M 43 54 L 43 70 C 47 73, 53 73, 57 70 L 57 54 Z" fill="#d99f73"/>
+
+                <!-- Ears -->
+                <ellipse cx="29" cy="46" rx="4" ry="6.5" fill="#f5c29a"/>
+                <ellipse cx="71" cy="46" rx="4" ry="6.5" fill="#f5c29a"/>
+
+                <!-- Head / Face -->
+                <path d="M 31 38 C 31 18, 69 18, 69 38 C 69 57, 63 67, 50 67 C 37 67, 31 57, 31 38 Z" fill="#f5c29a"/>
+
+                <!-- Eyes & Eyebrows -->
+                <ellipse cx="41.5" cy="43" rx="3.5" ry="2.6" fill="#ffffff"/>
+                <ellipse cx="41.5" cy="43" rx="2" ry="2.3" fill="#1a252f"/>
+                <circle cx="42.3" cy="42.2" r="0.8" fill="#ffffff"/>
+
+                <ellipse cx="58.5" cy="43" rx="3.5" ry="2.6" fill="#ffffff"/>
+                <ellipse cx="58.5" cy="43" rx="2" ry="2.3" fill="#1a252f"/>
+                <circle cx="59.3" cy="42.2" r="0.8" fill="#ffffff"/>
+
+                <path d="M 37 36.5 Q 41.5 33 46.5 36.5" stroke="#1b1b1b" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+                <path d="M 53.5 36.5 Q 58.5 33 63 36.5" stroke="#1b1b1b" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+
+                <!-- Nose & Dealer Smile -->
+                <path d="M 49 44 Q 50.5 49.5 52.5 49" stroke="#d99f73" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <path d="M 43.5 56 Q 50 61 56.5 56" stroke="#7a2e2e" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+                <!-- Hair (Neat Side Part) -->
+                <path d="M 29 36 C 28 15, 42 9, 50 9 C 64 9, 71 17, 71 36 C 67 27, 56 25, 48 25 C 38 25, 32 28, 29 36 Z" fill="#1b1b1b"/>
+            </g>
+        </svg>`;
+    }
+
+    function getAvatar(playerOrName) {
+        if (playerOrName && typeof playerOrName === 'object') {
+            if (playerOrName.avatar && (playerOrName.avatar.skin || playerOrName.avatar.id)) return playerOrName.avatar;
+            if (playerOrName.name) return getAvatar(playerOrName.name);
+        }
+        const name = typeof playerOrName === 'string' ? playerOrName : '';
+        if (name === myName && myAvatar) return myAvatar;
+
+        const botMap = {
+            'Bot Ace': CHARACTER_PRESETS[3],
+            'Bot Sophia': CHARACTER_PRESETS[2],
+            'Bot Maverick': CHARACTER_PRESETS[0],
+            'Bot Oliver': CHARACTER_PRESETS[1],
+            'Bot Luna': CHARACTER_PRESETS[9],
+            'Bot Jasper': CHARACTER_PRESETS[7],
+            'Bot Hunter': CHARACTER_PRESETS[8],
+            'Bot Chloe': CHARACTER_PRESETS[5],
+            'Bot Duke': CHARACTER_PRESETS[6],
+            'Bot Bella': CHARACTER_PRESETS[10],
+            'Bot Jax': CHARACTER_PRESETS[4],
+            'Bot Ruby': CHARACTER_PRESETS[11]
+        };
+        if (botMap[name]) return botMap[name];
+
         const safeName = name || 'Player';
         const hash = safeName.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0);
-        return {
-            initials: safeName.substring(0, 2).toUpperCase(),
-            color: AVATAR_COLORS[hash % AVATAR_COLORS.length]
+        return CHARACTER_PRESETS[hash % CHARACTER_PRESETS.length];
+    }
+
+    function getAvatarSVG(playerOrAv, size = 36) {
+        const av = (playerOrAv && typeof playerOrAv === 'object' && (playerOrAv.skin || playerOrAv.hairStyle))
+            ? playerOrAv
+            : getAvatar(playerOrAv);
+        return generate2DAvatarSVG(av, size);
+    }
+
+    function setMyAvatar(av, save = true) {
+        myAvatar = Object.assign({}, myAvatar, av);
+        if (save) {
+            try { localStorage.setItem('poker_avatar', JSON.stringify(myAvatar)); } catch (e) {}
+        }
+        updateAvatarPreviews();
+        updateLoungeProfile();
+    }
+
+    function updateAvatarPreviews() {
+        const namePrev = document.getElementById('name-avatar-preview');
+        if (namePrev) {
+            namePrev.innerHTML = generate2DAvatarSVG(myAvatar, 64);
+            namePrev.style.background = myAvatar.bg || 'var(--bg-card)';
+            namePrev.classList.remove('pop');
+            void namePrev.offsetWidth;
+            namePrev.classList.add('pop');
+        }
+        const loungeAv = document.getElementById('lounge-user-avatar');
+        if (loungeAv) {
+            loungeAv.innerHTML = generate2DAvatarSVG(myAvatar, 32);
+            loungeAv.style.background = myAvatar.bg || 'var(--bg-card)';
+        }
+        const gameAv = document.getElementById('game-user-avatar');
+        if (gameAv) {
+            gameAv.innerHTML = generate2DAvatarSVG(myAvatar, 32);
+            gameAv.style.background = myAvatar.bg || 'var(--bg-card)';
+        }
+        const modalPrev = document.getElementById('modal-avatar-preview');
+        const modalName = document.getElementById('modal-avatar-name');
+        if (modalPrev) {
+            modalPrev.innerHTML = generate2DAvatarSVG(myAvatar, 72);
+            modalPrev.style.background = myAvatar.bg || 'var(--bg-card)';
+        }
+        if (modalName) {
+            modalName.textContent = myAvatar.name || 'Custom 2D Player';
+        }
+
+        const dealerAv = document.getElementById('dealer-avatar');
+        if (dealerAv && !dealerAv.querySelector('svg')) {
+            dealerAv.innerHTML = generateDealerSVG(48);
+        }
+    }
+
+    function populateAvatarGrid(containerId, currentSelectedId, onSelect) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        CHARACTER_PRESETS.forEach(av => {
+            const opt = document.createElement('div');
+            opt.className = 'avatar-option' + (av.id === currentSelectedId ? ' selected' : '');
+            opt.style.background = av.bg;
+            opt.innerHTML = generate2DAvatarSVG(av, 48);
+            opt.title = av.name;
+            opt.addEventListener('click', () => {
+                container.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+                opt.classList.add('selected');
+                if (onSelect) onSelect(av);
+            });
+            container.appendChild(opt);
+        });
+    }
+
+    function initAvatarStudio() {
+        // Populate Screen 2 preset grid
+        populateAvatarGrid('avatar-selection-grid', myAvatar.id, (av) => {
+            setMyAvatar(av, true);
+            syncCustomizerSelection();
+        });
+
+        // Populate Modal preset grid
+        populateAvatarGrid('modal-avatar-grid', myAvatar.id, (av) => {
+            setMyAvatar(av, true);
+            syncCustomizerSelection();
+        });
+
+        // Skin swatches
+        const skinWrap = document.getElementById('swatches-skin');
+        if (skinWrap) {
+            skinWrap.innerHTML = '';
+            SWATCHES.skins.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'color-swatch' + (myAvatar.skin === s.color ? ' active' : '');
+                btn.style.background = s.color;
+                btn.title = s.name;
+                btn.addEventListener('click', () => {
+                    skinWrap.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.skin = s.color;
+                    setMyAvatar(myAvatar, true);
+                });
+                skinWrap.appendChild(btn);
+            });
+        }
+
+        // Hair style options
+        const hairWrap = document.getElementById('options-hair');
+        if (hairWrap) {
+            hairWrap.innerHTML = '';
+            SWATCHES.hairStyles.forEach(h => {
+                const btn = document.createElement('button');
+                btn.className = 'style-option-btn' + (myAvatar.hairStyle === h.id ? ' active' : '');
+                btn.innerHTML = `<span class="opt-icon">${h.icon}</span><span class="opt-text">${h.name}</span>`;
+                btn.addEventListener('click', () => {
+                    hairWrap.querySelectorAll('.style-option-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.hairStyle = h.id;
+                    setMyAvatar(myAvatar, true);
+                });
+                hairWrap.appendChild(btn);
+            });
+        }
+
+        // Hair color swatches
+        const hairColorWrap = document.getElementById('swatches-hair-color');
+        if (hairColorWrap) {
+            hairColorWrap.innerHTML = '';
+            SWATCHES.hairColors.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'color-swatch' + (myAvatar.hairColor === c.color ? ' active' : '');
+                btn.style.background = c.color;
+                btn.title = c.name;
+                btn.addEventListener('click', () => {
+                    hairColorWrap.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.hairColor = c.color;
+                    setMyAvatar(myAvatar, true);
+                });
+                hairColorWrap.appendChild(btn);
+            });
+        }
+
+        // Glasses options
+        const glassesWrap = document.getElementById('options-glasses');
+        if (glassesWrap) {
+            glassesWrap.innerHTML = '';
+            SWATCHES.glasses.forEach(g => {
+                const btn = document.createElement('button');
+                btn.className = 'style-option-btn' + ((myAvatar.glasses || 'none') === g.id ? ' active' : '');
+                btn.innerHTML = `<span class="opt-icon">${g.icon}</span><span class="opt-text">${g.name}</span>`;
+                btn.addEventListener('click', () => {
+                    glassesWrap.querySelectorAll('.style-option-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.glasses = g.id;
+                    setMyAvatar(myAvatar, true);
+                });
+                glassesWrap.appendChild(btn);
+            });
+        }
+
+        // Facial hair options
+        const facialWrap = document.getElementById('options-facial-hair');
+        if (facialWrap) {
+            facialWrap.innerHTML = '';
+            SWATCHES.facialHair.forEach(f => {
+                const btn = document.createElement('button');
+                btn.className = 'style-option-btn' + ((myAvatar.facialHair || 'none') === f.id ? ' active' : '');
+                btn.innerHTML = `<span class="opt-icon">${f.icon}</span><span class="opt-text">${f.name}</span>`;
+                btn.addEventListener('click', () => {
+                    facialWrap.querySelectorAll('.style-option-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.facialHair = f.id;
+                    setMyAvatar(myAvatar, true);
+                });
+                facialWrap.appendChild(btn);
+            });
+        }
+
+        // Outfit options
+        const outfitWrap = document.getElementById('options-outfit');
+        if (outfitWrap) {
+            outfitWrap.innerHTML = '';
+            SWATCHES.outfits.forEach(o => {
+                const btn = document.createElement('button');
+                btn.className = 'style-option-btn' + (myAvatar.outfit === o.id ? ' active' : '');
+                btn.innerHTML = `<span class="opt-icon">${o.icon}</span><span class="opt-text">${o.name}</span>`;
+                btn.addEventListener('click', () => {
+                    outfitWrap.querySelectorAll('.style-option-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    myAvatar.outfit = o.id;
+                    setMyAvatar(myAvatar, true);
+                });
+                outfitWrap.appendChild(btn);
+            });
+        }
+    }
+
+    function syncCustomizerSelection() {
+        document.querySelectorAll('#swatches-skin .color-swatch').forEach(b => {
+            b.classList.toggle('active', b.style.backgroundColor === myAvatar.skin || b.getAttribute('style').includes(myAvatar.skin));
+        });
+        document.querySelectorAll('#swatches-hair-color .color-swatch').forEach(b => {
+            b.classList.toggle('active', b.style.backgroundColor === myAvatar.hairColor || b.getAttribute('style').includes(myAvatar.hairColor));
+        });
+        document.querySelectorAll('#options-hair .style-option-btn').forEach(b => {
+            b.classList.toggle('active', b.textContent.includes(myAvatar.hairStyle));
+        });
+        document.querySelectorAll('#options-glasses .style-option-btn').forEach(b => {
+            b.classList.toggle('active', b.textContent.includes(myAvatar.glasses || 'none'));
+        });
+        document.querySelectorAll('#options-facial-hair .style-option-btn').forEach(b => {
+            b.classList.toggle('active', b.textContent.includes(myAvatar.facialHair || 'none'));
+        });
+        document.querySelectorAll('#options-outfit .style-option-btn').forEach(b => {
+            b.classList.toggle('active', b.textContent.includes(myAvatar.outfit));
+        });
+    }
+
+    function randomizeAvatarLook() {
+        const randomSkin = SWATCHES.skins[Math.floor(Math.random() * SWATCHES.skins.length)].color;
+        const randomHair = SWATCHES.hairStyles[Math.floor(Math.random() * SWATCHES.hairStyles.length)].id;
+        const randomHairColor = SWATCHES.hairColors[Math.floor(Math.random() * SWATCHES.hairColors.length)].color;
+        const randomGlasses = SWATCHES.glasses[Math.floor(Math.random() * SWATCHES.glasses.length)].id;
+        const randomFacial = SWATCHES.facialHair[Math.floor(Math.random() * SWATCHES.facialHair.length)].id;
+        const randomOutfit = SWATCHES.outfits[Math.floor(Math.random() * SWATCHES.outfits.length)].id;
+        const randomBg = CHARACTER_PRESETS[Math.floor(Math.random() * CHARACTER_PRESETS.length)].bg;
+
+        myAvatar = {
+            id: 'custom_' + Date.now(),
+            name: 'Custom 2D Player',
+            bg: randomBg,
+            skin: randomSkin,
+            hairStyle: randomHair,
+            hairColor: randomHairColor,
+            glasses: randomGlasses,
+            facialHair: randomFacial,
+            outfit: randomOutfit
         };
+        setMyAvatar(myAvatar, true);
+        initAvatarStudio();
     }
 
     function getSeatLayout(count) {
@@ -802,42 +1612,93 @@
     // SECTION 6: LIVE CHAT (Global Lounge & Table)
     // ═══════════════════════════════════════════════
 
+    let currentInGameChatTab = 'table';
+
+    function setInGameChatTab(tab) {
+        currentInGameChatTab = tab;
+        const tableBtn = document.getElementById('tab-btn-table-chat');
+        const globalBtn = document.getElementById('tab-btn-global-chat');
+        const tablePane = document.getElementById('game-chat-messages');
+        const globalPane = document.getElementById('game-global-chat-messages');
+        const chatInput = document.getElementById('input-game-chat');
+        const tableBadge = document.getElementById('table-chat-tab-badge');
+        const globalBadge = document.getElementById('global-chat-tab-badge');
+
+        if (tab === 'table') {
+            if (tableBtn) tableBtn.classList.add('active');
+            if (globalBtn) globalBtn.classList.remove('active');
+            if (tablePane) tablePane.style.display = 'flex';
+            if (globalPane) globalPane.style.display = 'none';
+            if (chatInput) chatInput.placeholder = 'Say something at table…';
+            if (tableBadge) tableBadge.style.display = 'none';
+        } else {
+            if (tableBtn) tableBtn.classList.remove('active');
+            if (globalBtn) globalBtn.classList.add('active');
+            if (tablePane) tablePane.style.display = 'none';
+            if (globalPane) globalPane.style.display = 'flex';
+            if (chatInput) chatInput.placeholder = 'Message everyone in Global Lounge…';
+            if (globalBadge) globalBadge.style.display = 'none';
+        }
+    }
+
     function sendLoungeChatMessage(text) {
         if (!text || !text.trim()) return;
         const sender = myName.trim() || 'Player';
         const time = formatTime();
-        appendLoungeChatMessage(sender, text.trim(), time, false, true);
+        appendLoungeChatMessage(sender, text.trim(), time, false, true, myAvatar);
 
         broadcastRealtime('pocketaces_global_chat_v6', {
             type: 'lounge_chat',
             name: sender,
             text: text.trim(),
             time,
-            senderId: myId
+            senderId: myId,
+            avatar: myAvatar
         });
     }
 
-    function appendLoungeChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false) {
-        const container = document.getElementById('lobby-chat-messages');
-        if (!container) return;
+    function appendLoungeChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false, avatar = null) {
+        const containers = [
+            document.getElementById('lobby-chat-messages'),
+            document.getElementById('game-global-chat-messages')
+        ];
 
-        const row = document.createElement('div');
-        if (isSystem) {
-            row.className = 'chat-msg-row';
-            row.innerHTML = `<div class="chat-msg-system">${escHtml(text)}</div>`;
-        } else {
-            row.className = 'chat-msg-row' + (isMe ? ' is-me' : '');
-            const av = getAvatar(name);
-            row.innerHTML = `
-                <div class="chat-msg-header">
-                    <span class="chat-msg-name ${isMe ? 'is-me' : ''}" style="color:${isMe ? 'var(--gold)' : av.color}">${escHtml(name)}</span>
-                    <span class="chat-msg-time">${time}</span>
-                </div>
-                <div class="chat-msg-body">${escHtml(text)}</div>
-            `;
+        containers.forEach(container => {
+            if (!container) return;
+            const row = document.createElement('div');
+            if (isSystem) {
+                row.className = 'chat-msg-row';
+                row.innerHTML = `<div class="chat-msg-system">${escHtml(text)}</div>`;
+            } else {
+                row.className = 'chat-msg-row' + (isMe ? ' is-me' : '');
+                const av = avatar || getAvatar(name);
+                row.innerHTML = `
+                    <div class="chat-msg-header">
+                        <span class="chat-msg-avatar" style="background:${av.bg || 'var(--gold)'}">${getAvatarSVG(av, 20)}</span>
+                        <span class="chat-msg-name ${isMe ? 'is-me' : ''}" style="color:${isMe ? 'var(--gold)' : 'var(--text-primary)'}">${escHtml(name)}</span>
+                        <span class="chat-msg-time">${time}</span>
+                    </div>
+                    <div class="chat-msg-body">${escHtml(text)}</div>
+                `;
+            }
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+        });
+
+        if (!isMe) {
+            if (currentInGameChatTab !== 'global') {
+                const globalBadge = document.getElementById('global-chat-tab-badge');
+                if (globalBadge) globalBadge.style.display = 'inline-block';
+            }
+            if (!isGameChatOpen) {
+                unreadChatCount++;
+                const unreadBadge = document.getElementById('game-chat-unread');
+                if (unreadBadge) {
+                    unreadBadge.textContent = unreadChatCount > 9 ? '9+' : unreadChatCount;
+                    unreadBadge.style.display = 'flex';
+                }
+            }
         }
-        container.appendChild(row);
-        container.scrollTop = container.scrollHeight;
     }
 
     function sendGameChatMessage(name, text, isSystem = false, senderId = null) {
@@ -846,7 +1707,7 @@
         const time = formatTime();
         const fromId = senderId || myId;
 
-        appendGameChatMessage(sender, text.trim(), time, isSystem, fromId === myId, fromId);
+        appendGameChatMessage(sender, text.trim(), time, isSystem, fromId === myId, fromId, myAvatar);
 
         if (!isSystem && fromId) {
             showSeatSpeechBubble(fromId, text.trim());
@@ -858,7 +1719,8 @@
             text: text.trim(),
             time,
             isSystem,
-            senderId: fromId
+            senderId: fromId,
+            avatar: myAvatar
         };
 
         if (isHost) {
@@ -868,7 +1730,7 @@
         }
     }
 
-    function appendGameChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false, senderId = null) {
+    function appendGameChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false, senderId = null, avatar = null) {
         const container = document.getElementById('game-chat-messages');
         if (!container) return;
 
@@ -878,10 +1740,11 @@
             row.innerHTML = `<div class="chat-msg-system">${escHtml(text)}</div>`;
         } else {
             row.className = 'chat-msg-row' + (isMe ? ' is-me' : '');
-            const av = getAvatar(name);
+            const av = avatar || getAvatar(name);
             row.innerHTML = `
                 <div class="chat-msg-header">
-                    <span class="chat-msg-name ${isMe ? 'is-me' : ''}" style="color:${isMe ? 'var(--gold)' : av.color}">${escHtml(name)}</span>
+                    <span class="chat-msg-avatar" style="background:${av.bg || 'var(--gold)'}">${getAvatarSVG(av, 20)}</span>
+                    <span class="chat-msg-name ${isMe ? 'is-me' : ''}" style="color:${isMe ? 'var(--gold)' : 'var(--text-primary)'}">${escHtml(name)}</span>
                     <span class="chat-msg-time">${time}</span>
                 </div>
                 <div class="chat-msg-body">${escHtml(text)}</div>
@@ -890,11 +1753,19 @@
         container.appendChild(row);
         container.scrollTop = container.scrollHeight;
 
-        if (!isGameChatOpen && !isMe) {
-            unreadChatCount++;
-            const unreadBadge = document.getElementById('game-chat-unread');
-            unreadBadge.textContent = unreadChatCount > 9 ? '9+' : unreadChatCount;
-            unreadBadge.style.display = 'flex';
+        if (!isMe) {
+            if (currentInGameChatTab !== 'table') {
+                const tableBadge = document.getElementById('table-chat-tab-badge');
+                if (tableBadge) tableBadge.style.display = 'inline-block';
+            }
+            if (!isGameChatOpen) {
+                unreadChatCount++;
+                const unreadBadge = document.getElementById('game-chat-unread');
+                if (unreadBadge) {
+                    unreadBadge.textContent = unreadChatCount > 9 ? '9+' : unreadChatCount;
+                    unreadBadge.style.display = 'flex';
+                }
+            }
         }
     }
 
@@ -1302,8 +2173,32 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 8: DEALING PHYSICS & CARD ANIMATIONS
+    // SECTION 8: CASINO DEALER & DEALING PHYSICS
     // ═══════════════════════════════════════════════
+
+    let dealerSpeechTimer = null;
+    let lastRenderedPhase = null;
+
+    function dealerSay(text, duration = 3400) {
+        const bubble = document.getElementById('dealer-speech-bubble');
+        if (!bubble) return;
+        bubble.textContent = text;
+        bubble.style.display = 'block';
+        if (dealerSpeechTimer) clearTimeout(dealerSpeechTimer);
+        dealerSpeechTimer = setTimeout(() => {
+            bubble.style.display = 'none';
+        }, duration);
+    }
+
+    function animateDealerDeal() {
+        const dealerAv = document.getElementById('dealer-avatar');
+        if (dealerAv) {
+            dealerAv.classList.remove('dealing');
+            void dealerAv.offsetWidth;
+            dealerAv.classList.add('dealing');
+            setTimeout(() => dealerAv.classList.remove('dealing'), 500);
+        }
+    }
 
     function runDealPhysicsAnimation() {
         const table = document.getElementById('poker-table');
@@ -1313,24 +2208,16 @@
         dealLayer.innerHTML = '';
         isDealingAnimation = true;
 
+        dealerSay('♠ Shuffling & dealing hole cards…', 3800);
+        animateDealerDeal();
+
         const totalPlayers = viewState.players.length;
         const layout = getSeatLayout(totalPlayers);
 
-        let dealerPos = 3;
-        for (let offset = 0; offset < totalPlayers; offset++) {
-            const pIdx = (viewState.myIndex + offset) % totalPlayers;
-            if (pIdx === viewState.dealerIndex) {
-                dealerPos = layout[offset];
-                break;
-            }
-        }
-
-        const dealerDeck = document.getElementById('dealer-deck');
-        dealerDeck.className = `dealer-deck visible seat-pos-${dealerPos}`;
-
         const tableRect = table.getBoundingClientRect();
+        // Cards physically originate from the Casino Dealer Station at the top center
         const startX = tableRect.width / 2;
-        const startY = tableRect.height / 2 - 20;
+        const startY = 34;
 
         let delayIndex = 0;
 
@@ -1353,11 +2240,12 @@
 
                 setTimeout(() => {
                     playDealSound();
+                    animateDealerDeal();
                     const flyingCard = document.createElement('div');
                     flyingCard.className = 'flying-card';
                     flyingCard.style.left = `${startX - 23}px`;
-                    flyingCard.style.top = `${startY - 32}px`;
-                    flyingCard.style.transform = `scale(0.8) rotate(${Math.random() * 30 - 15}deg)`;
+                    flyingCard.style.top = `${startY - 16}px`;
+                    flyingCard.style.transform = `scale(0.7) rotate(${Math.random() * 20 - 10}deg)`;
 
                     dealLayer.appendChild(flyingCard);
 
@@ -1453,6 +2341,26 @@
             addBotBtn.style.display = (viewState.isHost && viewState.players.length < MAX_PLAYERS) ? 'inline-flex' : 'none';
         }
 
+        if (lastRenderedPhase !== viewState.phase) {
+            if (viewState.phase === 'flop') {
+                dealerSay('🃏 Flop is on the felt!');
+                animateDealerDeal();
+            } else if (viewState.phase === 'turn') {
+                dealerSay('🃏 Turn card dealt!');
+                animateDealerDeal();
+            } else if (viewState.phase === 'river') {
+                dealerSay('🃏 River card dealt! Showdown ready.');
+                animateDealerDeal();
+            } else if (viewState.phase === 'showdown' || viewState.phase === 'handEnd') {
+                if (viewState.results && viewState.results.message) {
+                    dealerSay('🏆 ' + viewState.results.message, 4500);
+                }
+            } else if (viewState.phase === 'lobby') {
+                dealerSay('♠ Welcome to the table! Host deals when ready.', 4000);
+            }
+            lastRenderedPhase = viewState.phase;
+        }
+
         renderPot();
         renderCommunityCards();
         renderSeats();
@@ -1534,7 +2442,7 @@
             if (p.folded) el.classList.add('folded');
             if (p.eliminated) el.classList.add('eliminated');
 
-            const av = getAvatar(p.name);
+            const av = getAvatar(p);
 
             let cardsHtml = '';
             if (p.cards && p.cards.length > 0) {
@@ -1567,7 +2475,7 @@
             el.innerHTML = `
                 ${cardsHtml}
                 <div class="seat-info">
-                    <div class="seat-avatar" style="background:${av.color}">${av.initials}</div>
+                    <div class="seat-avatar" style="background:${av.bg || 'var(--gold)'}">${getAvatarSVG(av, 36)}</div>
                     <div class="seat-details">
                         <div class="seat-name">${escHtml(p.name)}${p.isBot ? ' 🤖' : ''}</div>
                         <div class="seat-chips-amount">$${p.chips}</div>
@@ -1740,7 +2648,83 @@
             if (e.key === 'Enter') handleAuth();
         });
 
-        // ─ Screen 2: Name Entry Screen ─
+        // ─ Screen 2: Name & 2D Avatar Studio ─
+        initAvatarStudio();
+        updateAvatarPreviews();
+
+        const randomAvatarBtn = document.getElementById('btn-random-avatar');
+        if (randomAvatarBtn) {
+            randomAvatarBtn.addEventListener('click', randomizeAvatarLook);
+        }
+
+        const randomModalBtn = document.getElementById('btn-random-avatar-modal');
+        if (randomModalBtn) {
+            randomModalBtn.addEventListener('click', randomizeAvatarLook);
+        }
+
+        // 2D Character Studio Tab Switching (Presets vs Customizer)
+        document.querySelectorAll('.studio-tab').forEach(tabBtn => {
+            tabBtn.addEventListener('click', () => {
+                document.querySelectorAll('.studio-tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.studio-tab-content').forEach(c => c.classList.remove('active'));
+                tabBtn.classList.add('active');
+                const targetTab = tabBtn.dataset.tab;
+                const contentEl = document.getElementById('tab-' + targetTab);
+                if (contentEl) contentEl.classList.add('active');
+            });
+        });
+
+        function openAvatarModal(initialTab = 'presets') {
+            const modal = document.getElementById('modal-avatar');
+            if (!modal) return;
+            initAvatarStudio();
+            updateAvatarPreviews();
+
+            // Switch to requested tab
+            const tabBtn = document.querySelector(`.studio-tab[data-tab="${initialTab}"]`);
+            if (tabBtn) tabBtn.click();
+
+            modal.style.display = 'flex';
+        }
+
+        function closeAvatarModal() {
+            const modal = document.getElementById('modal-avatar');
+            if (modal) modal.style.display = 'none';
+            if (roomCode) {
+                if (isHost && gameState) {
+                    const me = gameState.players.find(p => p.id === myId);
+                    if (me) me.avatar = myAvatar;
+                    broadcastState();
+                } else {
+                    broadcastRealtime(`pocketaces_room_${roomCode}_to_host`, {
+                        type: 'update_avatar',
+                        playerId: myId,
+                        avatar: myAvatar
+                    });
+                }
+            }
+        }
+
+        const btnOpenCustomizerName = document.getElementById('btn-open-customizer-name');
+        if (btnOpenCustomizerName) {
+            btnOpenCustomizerName.addEventListener('click', () => openAvatarModal('custom'));
+        }
+
+        const loungeProfileEl = document.getElementById('lounge-user-profile');
+        if (loungeProfileEl) loungeProfileEl.addEventListener('click', () => openAvatarModal('presets'));
+
+        const changeAvatarBtn = document.getElementById('btn-change-avatar');
+        if (changeAvatarBtn) changeAvatarBtn.addEventListener('click', (e) => { e.stopPropagation(); openAvatarModal('presets'); });
+
+        const gameProfileEl = document.getElementById('game-user-profile');
+        if (gameProfileEl) gameProfileEl.addEventListener('click', () => openAvatarModal('presets'));
+
+        const closeAvatarModalBtn = document.getElementById('btn-close-avatar-modal');
+        if (closeAvatarModalBtn) closeAvatarModalBtn.addEventListener('click', closeAvatarModal);
+
+        const saveAvatarModalBtn = document.getElementById('btn-save-avatar-modal');
+        if (saveAvatarModalBtn) saveAvatarModalBtn.addEventListener('click', closeAvatarModal);
+
         const nameInput = document.getElementById('input-name');
         const nameBtn = document.getElementById('btn-name-submit');
         const nameError = document.getElementById('name-error');
@@ -1768,6 +2752,8 @@
         document.getElementById('btn-change-name').addEventListener('click', () => {
             showScreen('name');
             nameInput.value = myName;
+            initAvatarStudio();
+            updateAvatarPreviews();
             nameInput.focus();
         });
 
@@ -1794,7 +2780,7 @@
             });
         });
 
-        // ─ Screen 4: In-Game Live Table Chat Drawer ─
+        // ─ Screen 4: In-Game Live Table & Global Chat Drawer ─
         const gameChatDrawer = document.getElementById('game-chat-drawer');
         const gameChatToggleBtn = document.getElementById('btn-toggle-game-chat');
         const gameChatCloseBtn = document.getElementById('btn-close-game-chat');
@@ -1802,12 +2788,41 @@
         const gameChatSendBtn = document.getElementById('btn-send-game-chat');
         const unreadBadge = document.getElementById('game-chat-unread');
 
+        // Chat tab switching buttons
+        const tabBtnTable = document.getElementById('tab-btn-table-chat');
+        const tabBtnGlobal = document.getElementById('tab-btn-global-chat');
+
+        if (tabBtnTable) {
+            tabBtnTable.addEventListener('click', () => setInGameChatTab('table'));
+        }
+        if (tabBtnGlobal) {
+            tabBtnGlobal.addEventListener('click', () => setInGameChatTab('global'));
+        }
+
+        // Quick share table code to Global Lounge button
+        const shareCodeBtn = document.getElementById('btn-share-code-to-global');
+        if (shareCodeBtn) {
+            shareCodeBtn.addEventListener('click', () => {
+                if (roomCode) {
+                    sendLoungeChatMessage(`🃏 Join my poker table! Room Code: ${roomCode} ($1,000 Starting Stack)`);
+                    showToast(`Table ${roomCode} invite sent to Global Lounge!`, 'success');
+                }
+            });
+        }
+
         function toggleGameChat(open) {
             isGameChatOpen = typeof open === 'boolean' ? open : !isGameChatOpen;
             gameChatDrawer.classList.toggle('open', isGameChatOpen);
             if (isGameChatOpen) {
                 unreadChatCount = 0;
                 unreadBadge.style.display = 'none';
+                if (currentInGameChatTab === 'table') {
+                    const tableBadge = document.getElementById('table-chat-tab-badge');
+                    if (tableBadge) tableBadge.style.display = 'none';
+                } else {
+                    const globalBadge = document.getElementById('global-chat-tab-badge');
+                    if (globalBadge) globalBadge.style.display = 'none';
+                }
                 gameChatInput.focus();
             }
         }
@@ -1818,7 +2833,11 @@
         function handleSendGameChat() {
             const txt = gameChatInput.value;
             if (txt && txt.trim()) {
-                sendGameChatMessage(myName || 'Player', txt, false);
+                if (currentInGameChatTab === 'global') {
+                    sendLoungeChatMessage(txt);
+                } else {
+                    sendGameChatMessage(myName || 'Player', txt, false);
+                }
                 gameChatInput.value = '';
             }
         }
@@ -1830,7 +2849,11 @@
 
         document.querySelectorAll('.btn-table-emoji').forEach(btn => {
             btn.addEventListener('click', () => {
-                sendGameChatMessage(myName || 'Player', btn.dataset.emoji, false);
+                if (currentInGameChatTab === 'global') {
+                    sendLoungeChatMessage(btn.dataset.emoji);
+                } else {
+                    sendGameChatMessage(myName || 'Player', btn.dataset.emoji, false);
+                }
             });
         });
 
@@ -1989,6 +3012,7 @@
     function init() {
         setupEvents();
         initNetworking();
+        updateAvatarPreviews();
         appendLoungeChatMessage('♠ Dealer Bot', 'Welcome to Pocket Aces Lounge! Global chat and tables are live.', formatTime(), true);
 
         const isAuth = sessionStorage.getItem('poker_authed') === 'true';
