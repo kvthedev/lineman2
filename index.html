@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker</title>
+    <meta name="description" content="Play Texas Hold'em poker online with friends. Create a room, share the code, live chat, and enjoy a premium peer-to-peer poker experience.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠</text></svg>">
+</head>
+<body>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SCREEN 1: MINIMAL BLACK PASSWORD GATE       -->
+    <!-- ════════════════════════════════════════════ -->
+    <div id="screen-auth" class="screen screen-black active">
+        <div class="auth-minimal-box" id="auth-box">
+            <input type="password" id="input-password" placeholder="Password" autocomplete="off" spellcheck="false" autofocus>
+            <button id="btn-auth-submit" class="btn btn-primary">Enter</button>
+            <div id="auth-error" class="auth-error-msg"></div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SCREEN 2: NAME ENTRY SCREEN                 -->
+    <!-- ════════════════════════════════════════════ -->
+    <div id="screen-name" class="screen">
+        <div class="landing-bg">
+            <span class="floating-suit" style="--delay:0s;--x:15%;--dur:18s">♠</span>
+            <span class="floating-suit" style="--delay:4s;--x:35%;--dur:22s">♥</span>
+            <span class="floating-suit" style="--delay:7s;--x:65%;--dur:16s">♦</span>
+            <span class="floating-suit" style="--delay:10s;--x:80%;--dur:20s">♣</span>
+        </div>
+        <div class="name-entry-card" id="name-card">
+            <div class="name-entry-icon">♠</div>
+            <h2 class="name-entry-title">Enter Your Name</h2>
+            <p class="name-entry-subtitle">Choose a display name to join the tables</p>
+            
+            <div class="form-group">
+                <input type="text" id="input-name" placeholder="Your name (e.g. Maverick)" maxlength="12" autocomplete="off" spellcheck="false">
+            </div>
+            
+            <div id="name-error" class="auth-error-msg"></div>
+
+            <button id="btn-name-submit" class="btn btn-primary btn-lg">
+                Continue to Lounge <span class="btn-arrow">→</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SCREEN 3: MAIN LOUNGE & GLOBAL CHAT         -->
+    <!-- ════════════════════════════════════════════ -->
+    <div id="screen-landing" class="screen">
+        <div class="landing-bg">
+            <span class="floating-suit" style="--delay:0s;--x:10%;--dur:18s">♠</span>
+            <span class="floating-suit" style="--delay:3s;--x:25%;--dur:22s">♥</span>
+            <span class="floating-suit" style="--delay:6s;--x:50%;--dur:16s">♦</span>
+            <span class="floating-suit" style="--delay:9s;--x:70%;--dur:20s">♣</span>
+            <span class="floating-suit" style="--delay:12s;--x:85%;--dur:24s">♠</span>
+            <span class="floating-suit" style="--delay:2s;--x:40%;--dur:19s">♥</span>
+        </div>
+
+        <div class="lounge-topbar">
+            <div class="lounge-brand">♠ POCKET ACES</div>
+            <div class="lounge-user-profile">
+                <div class="user-avatar-badge" id="lounge-user-avatar">--</div>
+                <span class="user-name-badge" id="lounge-user-name">Player</span>
+                <button id="btn-change-name" class="btn-icon-only" title="Change Name">✎</button>
+            </div>
+        </div>
+
+        <div class="landing-layout">
+            <!-- Left Side: Table Management -->
+            <div class="landing-content">
+                <div class="landing-card">
+                    <h2 class="section-heading">Play Texas Hold'em</h2>
+                    
+                    <button id="btn-create-room" class="btn btn-primary btn-lg">
+                        <span class="btn-icon">🃏</span> Create Table
+                    </button>
+                    
+                    <div class="divider"><span>or join an existing table</span></div>
+                    
+                    <div class="join-row">
+                        <input type="text" id="input-room-code" placeholder="ROOM CODE" maxlength="6" autocomplete="off" spellcheck="false">
+                        <button id="btn-join-room" class="btn btn-secondary">Join Table</button>
+                    </div>
+
+                    <div class="chips-info-badge">
+                        <span class="chips-badge-icon">🪙</span> Starting Stack: <strong>$1,000</strong> (1×$500, 2×$100, 3×$50, 5×$20, 5×$10) &bull; Up to 12 Players
+                    </div>
+                </div>
+                <p class="landing-footer">Peer-to-peer &bull; No server needed &bull; Sourced for GitHub Games</p>
+            </div>
+
+            <!-- Right Side: Global Lobby Chat (Clean, No Emojis) -->
+            <div class="lobby-chat-panel" id="lobby-chat-panel">
+                <div class="chat-header">
+                    <div class="chat-header-title">
+                        <span class="chat-status-dot"></span>
+                        <span>Global Lounge Chat</span>
+                    </div>
+                    <span class="chat-badge-pill">Online</span>
+                </div>
+                <div class="chat-messages" id="lobby-chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="input-lobby-chat" placeholder="Send a message to the lounge…" maxlength="120" autocomplete="off">
+                    <button id="btn-send-lobby-chat" class="btn btn-primary btn-sm">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SCREEN 4: GAME TABLE & LIVE CHAT (Up to 12) -->
+    <!-- ════════════════════════════════════════════ -->
+    <div id="screen-game" class="screen">
+        <!-- Top Bar -->
+        <div class="game-topbar">
+            <div class="topbar-left">
+                <span class="brand-mini">♠ POCKET ACES</span>
+                <span id="blind-info" class="topbar-item">Blinds: $10 / $20</span>
+                <span id="hand-info" class="topbar-item">Hand #0</span>
+            </div>
+            <div class="topbar-center">
+                <span id="room-info" class="topbar-item room-badge">Room: ------</span>
+                <span id="player-count-badge" class="topbar-item count-badge">1/12 Players</span>
+            </div>
+            <div class="topbar-right">
+                <button id="btn-toggle-game-chat" class="topbar-btn btn-chat-toggle" title="Live Table Chat">
+                    💬 Table Chat <span id="game-chat-unread" class="unread-bubble" style="display:none">0</span>
+                </button>
+                <button id="btn-leave-room" class="topbar-leave" title="Leave Room">✕ Leave</button>
+            </div>
+        </div>
+
+        <!-- Table Area -->
+        <div class="table-area">
+            <div class="poker-table table-1" id="poker-table">
+                <div class="felt-texture"></div>
+                <div class="table-rail"></div>
+
+                <!-- 12 Dynamic Seat Slots -->
+                <div class="seat" id="seat-0" data-seat="0"></div>
+                <div class="seat" id="seat-1" data-seat="1"></div>
+                <div class="seat" id="seat-2" data-seat="2"></div>
+                <div class="seat" id="seat-3" data-seat="3"></div>
+                <div class="seat" id="seat-4" data-seat="4"></div>
+                <div class="seat" id="seat-5" data-seat="5"></div>
+                <div class="seat" id="seat-6" data-seat="6"></div>
+                <div class="seat" id="seat-7" data-seat="7"></div>
+                <div class="seat" id="seat-8" data-seat="8"></div>
+                <div class="seat" id="seat-9" data-seat="9"></div>
+                <div class="seat" id="seat-10" data-seat="10"></div>
+                <div class="seat" id="seat-11" data-seat="11"></div>
+
+                <!-- Community Cards, Pot & Hand Helper -->
+                <div class="community-area" id="community-area">
+                    <div class="pot-display-wrap">
+                        <div class="pot-chips" id="pot-chips"></div>
+                        <div class="pot-display" id="pot-display">Pot: $0</div>
+                    </div>
+                    <div class="community-cards" id="community-cards"></div>
+                    <div class="my-hand-indicator" id="my-hand-indicator" style="display:none">
+                        <span class="hand-label">Your Hand:</span>
+                        <span class="hand-name" id="my-hand-name">High Card</span>
+                    </div>
+                </div>
+
+                <!-- Lobby Overlay (visible on table when waiting to deal) -->
+                <div class="table-lobby" id="table-lobby">
+                    <div class="table-lobby-inner">
+                        <div class="table-room-code-box">
+                            <span class="table-room-label">TABLE CODE</span>
+                            <span class="table-room-value" id="table-room-code">------</span>
+                            <button id="btn-copy-code" class="btn-icon-only" title="Copy code">📋</button>
+                        </div>
+                        <p class="table-waiting" id="table-waiting">Waiting for players to join (up to 12)…</p>
+                        <div class="lobby-controls">
+                            <button id="btn-add-bot" class="btn btn-secondary btn-sm" title="Add an AI bot to practice or fill seats">
+                                <span class="btn-icon">🤖</span> Add Bot
+                            </button>
+                            <button id="btn-start-game" class="btn btn-primary btn-lg" style="display:none">
+                                <span class="btn-icon">🃏</span> Deal Cards
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dealing animation layer -->
+                <div class="deal-layer" id="deal-layer"></div>
+
+                <!-- Dealer Deck (physical card stack positioned at Dealer) -->
+                <div class="dealer-deck" id="dealer-deck">
+                    <div class="deck-stack">
+                        <div class="card-back deck-card"></div>
+                        <div class="card-back deck-card"></div>
+                        <div class="card-back deck-card"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- In-Game Live Chat Drawer (Collapsible) -->
+            <div class="game-chat-drawer" id="game-chat-drawer">
+                <div class="chat-header">
+                    <div class="chat-header-title">
+                        <span class="chat-status-dot"></span>
+                        <span>Table Live Chat</span>
+                    </div>
+                    <button id="btn-close-game-chat" class="btn-icon-only chat-close-btn">✕</button>
+                </div>
+                <div class="chat-messages" id="game-chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="input-game-chat" placeholder="Say something at table…" maxlength="120" autocomplete="off">
+                    <button id="btn-send-game-chat" class="btn btn-primary btn-sm">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar" id="action-bar">
+            <button id="btn-fold" class="btn btn-fold" title="Fold (F)">Fold</button>
+            <button id="btn-check-call" class="btn btn-check" title="Check/Call (C)">Check</button>
+            
+            <!-- Raise Section with Slider & Quick Bets -->
+            <div class="raise-section" id="raise-section">
+                <div class="quick-bets">
+                    <button class="btn-quick" data-type="min">Min</button>
+                    <button class="btn-quick" data-type="half">1/2 Pot</button>
+                    <button class="btn-quick" data-type="pot">Pot</button>
+                    <button class="btn-quick" data-type="2x">2x Pot</button>
+                    <button class="btn-quick" data-type="max">Max</button>
+                </div>
+                <div class="raise-slider-row">
+                    <button id="btn-raise-minus" class="btn-round" title="Decrease">−</button>
+                    <input type="range" id="raise-slider" min="20" max="1000" step="10" value="40">
+                    <button id="btn-raise-plus" class="btn-round" title="Increase">+</button>
+                </div>
+                <button id="btn-raise" class="btn btn-raise" title="Raise (R)">Raise to $40</button>
+            </div>
+            
+            <button id="btn-allin" class="btn btn-allin" title="All In (A)">All In</button>
+        </div>
+
+        <!-- Results Overlay -->
+        <div class="results-overlay" id="results-overlay">
+            <div class="results-panel">
+                <div class="results-trophy" id="results-trophy">🏆</div>
+                <h2 id="results-title">Hand Complete</h2>
+                <div id="results-content"></div>
+                <div class="results-timer-bar">
+                    <div class="timer-bar-fill" id="timer-bar-fill"></div>
+                </div>
+                <button id="btn-next-hand" class="btn btn-primary" style="display:none">
+                    <span class="btn-icon">▶</span> Deal Next Hand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Overlay -->
+    <div id="connection-overlay" class="connection-overlay">
+        <div class="spinner"></div>
+        <span id="connection-text">Connecting…</span>
+    </div>
+
+    <!-- PeerJS CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="poker.js"></script>
+</body>
+</html>
