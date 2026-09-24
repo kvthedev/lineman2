@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Poker</title>
     <meta name="description" content="Play Texas Hold'em poker online with friends. Create a room, share the code, live chat, and enjoy a premium peer-to-peer poker experience.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.1">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠</text></svg>">
 </head>
 <body>
@@ -271,6 +274,8 @@
         <span id="connection-text">Connecting…</span>
     </div>
 
-    <script src="poker.js"></script>
+    <!-- Realtime Sync Engine (ScaleDrone Global WebSocket) -->
+    <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
+    <script src="poker.js?v=3.1"></script>
 </body>
 </html>

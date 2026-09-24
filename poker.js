@@ -808,7 +808,7 @@
         const time = formatTime();
         appendLoungeChatMessage(sender, text.trim(), time, false, true);
 
-        broadcastRealtime('pocketaces_global_chat_v5', {
+        broadcastRealtime('pocketaces_global_chat_v6', {
             type: 'lounge_chat',
             name: sender,
             text: text.trim(),
@@ -927,26 +927,21 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 7: REALTIME NETWORK RELAY
+    // SECTION 7: REALTIME NETWORK RELAY (ScaleDrone + Local)
     // ═══════════════════════════════════════════════
 
+    const SCALEDRONE_CHANNEL_ID = 'yjEbQRdoJMSrfBpT';
     const seenMessageIds = new Set();
     let localChannel = null;
-    let wsRelay = null;
-    let isWsConnected = false;
-
-    const WS_RELAY_URLS = [
-        'wss://relay.damus.io',
-        'wss://nos.lol',
-        'wss://relay.primal.net'
-    ];
-    let wsRelayIndex = 0;
+    let drone = null;
+    let loungeRoom = null;
+    let gameRoom = null;
 
     function initNetworking() {
         // 1. Local BroadcastChannel for instant same-browser / multi-tab synchronization
         try {
             if (typeof BroadcastChannel !== 'undefined' && !localChannel) {
-                localChannel = new BroadcastChannel('pocketaces_p2p_sync_v5');
+                localChannel = new BroadcastChannel('pocketaces_p2p_sync_v6');
                 localChannel.onmessage = e => {
                     if (e.data && e.data.msgId) {
                         onIncomingNetworkPayload(e.data);
@@ -955,54 +950,48 @@
             }
         } catch (e) {}
 
-        // 2. Cloud WebSocket for internet sync across different computers/friends
-        connectCloudWebSocket();
+        // 2. ScaleDrone Realtime WebSockets for cross-computer worldwide sync
+        try {
+            if (typeof ScaleDrone !== 'undefined' && !drone) {
+                drone = new ScaleDrone(SCALEDRONE_CHANNEL_ID, {
+                    data: { name: myName || 'Player', id: myId }
+                });
+
+                drone.on('open', error => {
+                    if (error) return console.warn('ScaleDrone open err:', error);
+
+                    loungeRoom = drone.subscribe('observable-pocketaces-lounge-v6');
+                    loungeRoom.on('data', (data, member) => {
+                        if (data && data.msgId) {
+                            onIncomingNetworkPayload(data);
+                        }
+                    });
+
+                    if (roomCode) {
+                        subscribeScaleDroneRoom(roomCode);
+                    }
+                });
+
+                drone.on('error', err => console.warn('ScaleDrone err:', err));
+            } else if (typeof ScaleDrone === 'undefined') {
+                setTimeout(initNetworking, 400);
+            }
+        } catch (e) {
+            console.warn('ScaleDrone init failed:', e);
+        }
     }
 
-    function connectCloudWebSocket() {
-        if (wsRelay && (wsRelay.readyState === WebSocket.OPEN || wsRelay.readyState === WebSocket.CONNECTING)) {
-            return;
-        }
-
-        const relayUrl = WS_RELAY_URLS[wsRelayIndex % WS_RELAY_URLS.length];
+    function subscribeScaleDroneRoom(code) {
+        if (!drone) return;
         try {
-            wsRelay = new WebSocket(relayUrl);
-
-            wsRelay.onopen = () => {
-                isWsConnected = true;
-                const subMsg = JSON.stringify([
-                    "REQ",
-                    "pa_sub_" + myId,
-                    { "kinds": [1], "#t": ["pocketaces_poker_v5"] }
-                ]);
-                wsRelay.send(subMsg);
-            };
-
-            wsRelay.onmessage = event => {
-                try {
-                    const parsed = JSON.parse(event.data);
-                    if (Array.isArray(parsed) && parsed[0] === 'EVENT' && parsed[2] && parsed[2].content) {
-                        const payload = JSON.parse(parsed[2].content);
-                        if (payload && payload.msgId) {
-                            onIncomingNetworkPayload(payload);
-                        }
-                    }
-                } catch (e) {}
-            };
-
-            wsRelay.onerror = () => {
-                isWsConnected = false;
-            };
-
-            wsRelay.onclose = () => {
-                isWsConnected = false;
-                wsRelayIndex++;
-                setTimeout(connectCloudWebSocket, 3000);
-            };
-        } catch (e) {
-            wsRelayIndex++;
-            setTimeout(connectCloudWebSocket, 3000);
-        }
+            if (gameRoom) gameRoom.unsubscribe();
+            gameRoom = drone.subscribe(`observable-pocketaces-room-${code}`);
+            gameRoom.on('data', (data, member) => {
+                if (data && data.msgId) {
+                    onIncomingNetworkPayload(data);
+                }
+            });
+        } catch (e) {}
     }
 
     function broadcastRealtime(topic, data) {
@@ -1021,25 +1010,25 @@
             seenMessageIds.delete(first);
         }
 
-        // 1. Broadcast locally
+        // 1. Broadcast locally (for multi-tabs on same device)
         if (localChannel) {
             try { localChannel.postMessage(payload); } catch (e) {}
         }
 
-        // 2. Broadcast to Cloud WebSocket
-        if (wsRelay && wsRelay.readyState === WebSocket.OPEN) {
+        // 2. Broadcast globally via ScaleDrone WebSocket
+        if (drone) {
             try {
-                const now = Math.floor(Date.now() / 1000);
-                const nostrEvent = {
-                    id: "ev_" + msgId,
-                    pubkey: "pk_" + myId.padEnd(64, '0'),
-                    created_at: now,
-                    kind: 1,
-                    tags: [["t", "pocketaces_poker_v5"]],
-                    content: JSON.stringify(payload),
-                    sig: "sig_" + msgId
-                };
-                wsRelay.send(JSON.stringify(["EVENT", nostrEvent]));
+                if (topic === 'pocketaces_global_chat_v6') {
+                    drone.publish({
+                        room: 'observable-pocketaces-lounge-v6',
+                        message: payload
+                    });
+                } else if (roomCode) {
+                    drone.publish({
+                        room: `observable-pocketaces-room-${roomCode}`,
+                        message: payload
+                    });
+                }
             } catch (e) {}
         }
     }
@@ -1058,7 +1047,7 @@
 
     function handleNetworkMessage(topic, data, senderId) {
         // 1. Global Lounge Chat
-        if (topic === 'pocketaces_global_chat_v5') {
+        if (topic === 'pocketaces_global_chat_v6') {
             if (data && data.type === 'lounge_chat') {
                 if (data.senderId !== myId) {
                     appendLoungeChatMessage(data.name, data.text, data.time, !!data.isSystem, false);
@@ -1160,6 +1149,8 @@
         initGameState();
         addPlayer(myId, myName, false);
 
+        subscribeScaleDroneRoom(roomCode);
+
         viewState = makeViewState(myId);
         renderFromViewState();
         showScreen('game');
@@ -1170,6 +1161,8 @@
     function joinRoom(code) {
         roomCode = code.toUpperCase();
         isHost = false;
+
+        subscribeScaleDroneRoom(roomCode);
 
         return new Promise((resolve, reject) => {
             let attempts = 0;
@@ -1294,6 +1287,10 @@
                     id: myId,
                     name: myName
                 });
+            }
+            if (gameRoom) {
+                try { gameRoom.unsubscribe(); } catch (e) {}
+                gameRoom = null;
             }
         }
         roomCode = '';
