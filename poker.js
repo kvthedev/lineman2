@@ -32,14 +32,14 @@
     const AVATAR_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00cec9','#6c5ce7','#fd79a8','#fdcb6e'];
 
     // ─── APPLICATION STATE ─────────────────────────
-    let myPeer   = null;   // PeerJS instance
-    let myId     = null;   // My PeerJS id
+    let myId     = 'p_' + Math.random().toString(36).substring(2, 9);
     let myName   = '';
     let isHost   = false;
     let roomCode = '';
 
-    let connections = {};  // host keeps: { peerId: { conn, name } }
-    let hostConn    = null; // client keeps: connection to host
+    let mqttClient = null;
+    let mqttConnected = false;
+    let activeSubscriptions = new Set();
 
     let gameState = null;  // Host-authoritative game state
     let viewState = null;  // Client-side view of game state
@@ -51,7 +51,6 @@
     // Chat state
     let unreadChatCount = 0;
     let isGameChatOpen = false;
-    let globalLoungeChannel = null;
 
     // ═══════════════════════════════════════════════
     // SECTION 1: AUDIO SYNTHESIZER (DISABLED / REMOVED)
@@ -800,21 +799,8 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 6: LIVE CHAT (Global & Table)
+    // SECTION 6: LIVE CHAT (Global Lounge & Table)
     // ═══════════════════════════════════════════════
-
-    function initGlobalLoungeChat() {
-        try {
-            globalLoungeChannel = new BroadcastChannel('pocketaces_global_lounge');
-            globalLoungeChannel.onmessage = e => {
-                if (e.data && e.data.type === 'lounge_chat') {
-                    appendLoungeChatMessage(e.data.name, e.data.text, e.data.time, false);
-                }
-            };
-        } catch (e) {}
-
-        appendLoungeChatMessage('♠ Dealer Bot', 'Welcome to Pocket Aces Lounge! Create a table or enter a code to play with friends.', formatTime(), true);
-    }
 
     function sendLoungeChatMessage(text) {
         if (!text || !text.trim()) return;
@@ -822,11 +808,13 @@
         const time = formatTime();
         appendLoungeChatMessage(sender, text.trim(), time, false, true);
 
-        if (globalLoungeChannel) {
-            try {
-                globalLoungeChannel.postMessage({ type: 'lounge_chat', name: sender, text: text.trim(), time });
-            } catch (e) {}
-        }
+        publishNetwork('pocketaces_global_chat_v4', {
+            type: 'lounge_chat',
+            name: sender,
+            text: text.trim(),
+            time,
+            senderId: myId
+        });
     }
 
     function appendLoungeChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false) {
@@ -874,21 +862,15 @@
         };
 
         if (isHost) {
-            for (const pid of Object.keys(connections)) {
-                if (pid !== fromId && connections[pid] && connections[pid].conn) {
-                    try { connections[pid].conn.send(payload); } catch (e) {}
-                }
-            }
-        } else if (hostConn && hostConn.open) {
-            hostConn.send(payload);
+            publishNetwork(`pocketaces_room_${roomCode}_to_clients`, payload);
+        } else {
+            publishNetwork(`pocketaces_room_${roomCode}_to_host`, payload);
         }
     }
 
     function appendGameChatMessage(name, text, time = formatTime(), isSystem = false, isMe = false, senderId = null) {
         const container = document.getElementById('game-chat-messages');
         if (!container) return;
-
-        playChatPopSound();
 
         const row = document.createElement('div');
         if (isSystem) {
@@ -945,177 +927,258 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 7: NETWORKING (PeerJS WebRTC)
+    // SECTION 7: NETWORKING (MQTT over WebSockets)
     // ═══════════════════════════════════════════════
+
+    const BROKER_URLS = [
+        'wss://broker.emqx.io:8084/mqtt',
+        'wss://broker.hivemq.com:8884/mqtt'
+    ];
+    let brokerIndex = 0;
+
+    function initNetworking() {
+        if (mqttClient) return;
+        const brokerUrl = BROKER_URLS[brokerIndex % BROKER_URLS.length];
+
+        try {
+            if (typeof mqtt === 'undefined') {
+                console.warn('MQTT library loading...');
+                setTimeout(initNetworking, 300);
+                return;
+            }
+
+            mqttClient = mqtt.connect(brokerUrl, {
+                keepalive: 30,
+                reconnectPeriod: 2500,
+                connectTimeout: 6000,
+                clientId: 'pa_' + myId + '_' + Math.random().toString(36).substring(2, 6)
+            });
+
+            mqttClient.on('connect', () => {
+                mqttConnected = true;
+                activeSubscriptions.forEach(topic => {
+                    mqttClient.subscribe(topic);
+                });
+                subscribeTopic('pocketaces_global_chat_v4');
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                try {
+                    const data = JSON.parse(message.toString());
+                    handleNetworkMessage(topic, data);
+                } catch (e) {
+                    console.error('Network parse error:', e);
+                }
+            });
+
+            mqttClient.on('error', err => {
+                console.warn('MQTT error on ' + brokerUrl + ':', err);
+            });
+
+            mqttClient.on('close', () => {
+                mqttConnected = false;
+            });
+        } catch (e) {
+            console.error('MQTT setup error:', e);
+        }
+    }
+
+    function subscribeTopic(topic) {
+        activeSubscriptions.add(topic);
+        if (mqttClient && mqttConnected) {
+            mqttClient.subscribe(topic);
+        }
+    }
+
+    function unsubscribeTopic(topic) {
+        activeSubscriptions.delete(topic);
+        if (mqttClient && mqttConnected) {
+            mqttClient.unsubscribe(topic);
+        }
+    }
+
+    function publishNetwork(topic, payload) {
+        const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+        if (!mqttClient || !mqttConnected) {
+            setTimeout(() => {
+                if (mqttClient && mqttConnected) {
+                    mqttClient.publish(topic, payloadStr);
+                }
+            }, 600);
+            return;
+        }
+        mqttClient.publish(topic, payloadStr);
+    }
+
+    function handleNetworkMessage(topic, data) {
+        // 1. Global Lounge Chat
+        if (topic === 'pocketaces_global_chat_v4') {
+            if (data.type === 'lounge_chat') {
+                appendLoungeChatMessage(data.name, data.text, data.time, !!data.isSystem, data.senderId === myId);
+            }
+            return;
+        }
+
+        if (!roomCode) return;
+
+        // 2. Host receiving join request from players
+        if (isHost && topic === `pocketaces_room_${roomCode}_join`) {
+            if (data.type === 'join') {
+                if (data.id === myId) return;
+
+                if (gameState.players.length >= MAX_PLAYERS) {
+                    publishNetwork(`pocketaces_room_${roomCode}_client_${data.id}`, {
+                        type: 'error',
+                        message: 'Table is full (max 12 players).'
+                    });
+                    return;
+                }
+                if (gameState.phase !== 'lobby') {
+                    publishNetwork(`pocketaces_room_${roomCode}_client_${data.id}`, {
+                        type: 'error',
+                        message: 'Hand in progress. Please wait for next hand.'
+                    });
+                    return;
+                }
+
+                const existing = gameState.players.find(p => p.id === data.id);
+                if (!existing) {
+                    addPlayer(data.id, data.name, false);
+                    showToast(`${data.name} joined the table!`, 'success');
+                    sendGameChatMessage('♠ Dealer', `${data.name} joined the table!`, true);
+                }
+                broadcastState();
+            }
+            return;
+        }
+
+        // 3. Host receiving player action, in-game chat, or leave message
+        if (isHost && topic === `pocketaces_room_${roomCode}_to_host`) {
+            if (data.type === 'action') {
+                handlePlayerAction(data.playerId, data.action, data.amount);
+            } else if (data.type === 'chat') {
+                appendGameChatMessage(data.name, data.text, data.time, data.isSystem, data.senderId === myId, data.senderId);
+                if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
+                publishNetwork(`pocketaces_room_${roomCode}_to_clients`, data);
+            } else if (data.type === 'leave') {
+                showToast(`${data.name} left the table`, 'info');
+                sendGameChatMessage('♠ Dealer', `${data.name} left the table.`, true);
+                removePlayer(data.id);
+                broadcastState();
+            }
+            return;
+        }
+
+        // 4. Client receiving private view state or errors from host
+        if (!isHost && topic === `pocketaces_room_${roomCode}_client_${myId}`) {
+            if (data.type === 'state') {
+                handleIncomingState(data);
+            } else if (data.type === 'error') {
+                showToast(data.message, 'error');
+            }
+            return;
+        }
+
+        // 5. Client receiving general broadcast messages (chat or public state)
+        if (!isHost && topic === `pocketaces_room_${roomCode}_to_clients`) {
+            if (data.type === 'state') {
+                handleIncomingState(data);
+            } else if (data.type === 'chat') {
+                if (data.senderId !== myId) {
+                    appendGameChatMessage(data.name, data.text, data.time, data.isSystem, false, data.senderId);
+                    if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
+                }
+            }
+            return;
+        }
+    }
+
+    function handleIncomingState(data) {
+        const prevPhase = viewState ? viewState.phase : null;
+        const prevHand  = viewState ? viewState.handNumber : null;
+        viewState = data;
+
+        if (prevHand !== viewState.handNumber && viewState.phase === 'preflop') {
+            runDealPhysicsAnimation();
+        }
+
+        renderFromViewState();
+    }
 
     function createRoom() {
         roomCode = generateRoomCode();
         isHost = true;
 
-        return new Promise((resolve, reject) => {
-            myPeer = new Peer(PEER_PREFIX + roomCode, {
-                debug: 0,
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
-            });
+        initGameState();
+        addPlayer(myId, myName, false);
 
-            myPeer.on('open', id => {
-                myId = id;
-                initGameState();
-                addPlayer(myId, myName, false);
-                myPeer.on('connection', onIncomingConnection);
-                resolve(roomCode);
-            });
+        subscribeTopic(`pocketaces_room_${roomCode}_join`);
+        subscribeTopic(`pocketaces_room_${roomCode}_to_host`);
 
-            myPeer.on('error', err => {
-                if (err.type === 'unavailable-id') {
-                    roomCode = generateRoomCode();
-                    myPeer.destroy();
-                    createRoom().then(resolve).catch(reject);
-                } else {
-                    reject(err);
-                }
-            });
-        });
+        viewState = makeViewState(myId);
+        renderFromViewState();
+        showScreen('game');
+
+        return Promise.resolve(roomCode);
     }
 
     function joinRoom(code) {
         roomCode = code.toUpperCase();
         isHost = false;
 
+        subscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
+        subscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
+
         return new Promise((resolve, reject) => {
-            myPeer = new Peer(undefined, {
-                debug: 0,
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
-            });
+            let attempts = 0;
+            const maxAttempts = 8;
+            let resolved = false;
 
-            myPeer.on('open', id => {
-                myId = id;
-                hostConn = myPeer.connect(PEER_PREFIX + roomCode, { reliable: true });
+            const sendJoinPing = () => {
+                if (resolved) return;
+                publishNetwork(`pocketaces_room_${roomCode}_join`, {
+                    type: 'join',
+                    name: myName,
+                    id: myId
+                });
+            };
 
-                hostConn.on('open', () => {
-                    hostConn.send({ type: 'join', name: myName, id: myId });
+            const checkJoined = () => {
+                if (viewState && viewState.roomCode === roomCode) {
+                    resolved = true;
+                    showScreen('game');
                     resolve();
-                });
+                    return true;
+                }
+                return false;
+            };
 
-                hostConn.on('data', onHostMessage);
+            // Send immediate join ping
+            sendJoinPing();
 
-                hostConn.on('close', () => {
-                    showToast('Host disconnected from table', 'error');
-                    resetToLanding();
-                });
-
-                hostConn.on('error', reject);
-            });
-
-            myPeer.on('error', err => {
-                if (err.type === 'peer-unavailable') {
-                    reject(new Error('Table not found. Check the code and try again.'));
+            const interval = setInterval(() => {
+                if (checkJoined()) {
+                    clearInterval(interval);
+                    return;
+                }
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    if (!resolved) {
+                        unsubscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
+                        unsubscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
+                        roomCode = '';
+                        reject(new Error('Table not found. Check the room code and try again.'));
+                    }
                 } else {
-                    reject(err);
+                    sendJoinPing();
                 }
-            });
+            }, 750);
         });
-    }
-
-    function onIncomingConnection(conn) {
-        conn.on('open', () => {
-            conn.on('data', data => onClientMessage(conn, data));
-            conn.on('close', () => onClientDisconnect(conn));
-        });
-    }
-
-    function onClientMessage(conn, data) {
-        switch (data.type) {
-            case 'join':
-                if (gameState.players.length >= MAX_PLAYERS) {
-                    conn.send({ type: 'error', message: 'Table is full (max 12 players).' });
-                    return;
-                }
-                if (gameState.phase !== 'lobby') {
-                    conn.send({ type: 'error', message: 'Hand in progress. Please wait for next hand.' });
-                    return;
-                }
-                connections[data.id] = { conn, name: data.name };
-                addPlayer(data.id, data.name, false);
-                showToast(`${data.name} joined the table!`, 'success');
-                playSnapSound();
-                broadcastState();
-                sendGameChatMessage('♠ Dealer', `${data.name} joined the table!`, true);
-                break;
-
-            case 'action':
-                handlePlayerAction(data.playerId, data.action, data.amount);
-                break;
-
-            case 'chat':
-                appendGameChatMessage(data.name, data.text, data.time, data.isSystem, data.senderId === myId, data.senderId);
-                if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
-                for (const pid of Object.keys(connections)) {
-                    if (pid !== data.senderId && connections[pid] && connections[pid].conn) {
-                        try { connections[pid].conn.send(data); } catch (e) {}
-                    }
-                }
-                break;
-        }
-    }
-
-    function onHostMessage(data) {
-        switch (data.type) {
-            case 'state': {
-                const prevPhase = viewState ? viewState.phase : null;
-                const prevHand  = viewState ? viewState.handNumber : null;
-                viewState = data;
-
-                if (prevHand !== viewState.handNumber && viewState.phase === 'preflop') {
-                    playShuffleSound();
-                    runDealPhysicsAnimation();
-                } else if (prevPhase !== viewState.phase) {
-                    if (viewState.phase === 'flop' || viewState.phase === 'turn' || viewState.phase === 'river') {
-                        playDealSound();
-                    } else if (viewState.phase === 'showdown' || viewState.phase === 'handEnd') {
-                        playWinSound();
-                    }
-                }
-
-                renderFromViewState();
-                break;
-            }
-            case 'chat':
-                appendGameChatMessage(data.name, data.text, data.time, data.isSystem, data.senderId === myId, data.senderId);
-                if (data.senderId) showSeatSpeechBubble(data.senderId, data.text);
-                break;
-
-            case 'error':
-                showToast(data.message, 'error');
-                break;
-        }
-    }
-
-    function onClientDisconnect(conn) {
-        for (const [pid, info] of Object.entries(connections)) {
-            if (info.conn === conn) {
-                showToast(`${info.name} left the table`, 'info');
-                sendGameChatMessage('♠ Dealer', `${info.name} left the table.`, true);
-                removePlayer(pid);
-                delete connections[pid];
-                broadcastState();
-                break;
-            }
-        }
     }
 
     function broadcastState() {
-        if (!isHost) return;
+        if (!isHost || !gameState) return;
         const prevPhase = viewState ? viewState.phase : null;
         const prevHand  = viewState ? viewState.handNumber : null;
 
@@ -1124,20 +1187,11 @@
             if (player.id === myId) {
                 viewState = view;
                 if (prevHand !== viewState.handNumber && viewState.phase === 'preflop') {
-                    playShuffleSound();
                     runDealPhysicsAnimation();
-                } else if (prevPhase !== viewState.phase) {
-                    if (viewState.phase === 'flop' || viewState.phase === 'turn' || viewState.phase === 'river') {
-                        playDealSound();
-                    } else if (viewState.phase === 'showdown' || viewState.phase === 'handEnd') {
-                        playWinSound();
-                    }
                 }
                 renderFromViewState();
-            } else if (connections[player.id]) {
-                try {
-                    connections[player.id].conn.send({ type: 'state', ...view });
-                } catch (e) {}
+            } else if (!player.isBot) {
+                publishNetwork(`pocketaces_room_${roomCode}_client_${player.id}`, view);
             }
         }
     }
@@ -1181,23 +1235,34 @@
     }
 
     function sendAction(action, amount) {
-        if (action === 'fold') playFoldSound();
-        else if (action === 'check') playCheckSound();
-        else playChipSound();
-
-        const data = { type: 'action', playerId: myId, action, amount: amount || 0 };
         if (isHost) {
             handlePlayerAction(myId, action, amount || 0);
-        } else if (hostConn && hostConn.open) {
-            hostConn.send(data);
+        } else {
+            publishNetwork(`pocketaces_room_${roomCode}_to_host`, {
+                type: 'action',
+                playerId: myId,
+                action,
+                amount: amount || 0
+            });
         }
     }
 
     function resetToLanding() {
-        if (myPeer) { try { myPeer.destroy(); } catch (e) {} }
-        myPeer = null;
-        hostConn = null;
-        connections = {};
+        if (roomCode) {
+            if (!isHost) {
+                publishNetwork(`pocketaces_room_${roomCode}_to_host`, {
+                    type: 'leave',
+                    id: myId,
+                    name: myName
+                });
+            }
+            unsubscribeTopic(`pocketaces_room_${roomCode}_join`);
+            unsubscribeTopic(`pocketaces_room_${roomCode}_to_host`);
+            unsubscribeTopic(`pocketaces_room_${roomCode}_to_clients`);
+            unsubscribeTopic(`pocketaces_room_${roomCode}_client_${myId}`);
+        }
+        roomCode = '';
+        isHost = false;
         gameState = null;
         viewState = null;
         if (nextHandTimer) { clearTimeout(nextHandTimer); nextHandTimer = null; }
@@ -1788,12 +1853,15 @@
         document.getElementById('btn-start-game').addEventListener('click', () => startGame());
         document.getElementById('btn-leave-room').addEventListener('click', () => resetToLanding());
 
-        // ─ Sound Toggle ─
-        document.getElementById('btn-sound-toggle').addEventListener('click', e => {
-            soundEnabled = !soundEnabled;
-            e.target.textContent = soundEnabled ? '🔊' : '🔇';
-            showToast(soundEnabled ? 'Sound effects enabled' : 'Sound effects muted', 'info');
-        });
+        // ─ Sound Toggle (Disabled) ─
+        const soundBtn = document.getElementById('btn-sound-toggle');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', e => {
+                soundEnabled = !soundEnabled;
+                e.target.textContent = soundEnabled ? '🔊' : '🔇';
+                showToast(soundEnabled ? 'Sound effects enabled' : 'Sound effects muted', 'info');
+            });
+        }
 
         // ─ Poker Actions ─
         document.getElementById('btn-fold').addEventListener('click', () => sendAction('fold'));
@@ -1888,7 +1956,8 @@
 
     function init() {
         setupEvents();
-        initGlobalLoungeChat();
+        initNetworking();
+        appendLoungeChatMessage('♠ Dealer Bot', 'Welcome to Pocket Aces Lounge! Global chat and tables are live.', formatTime(), true);
 
         const isAuth = sessionStorage.getItem('poker_authed') === 'true';
         const savedName = sessionStorage.getItem('poker_name');
