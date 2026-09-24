@@ -259,6 +259,7 @@
     let isDealingAnimation = false;
     let visibleHoleCards = {}; // Maps playerId -> count of hole cards visibly slid to seat (0, 1, or 2)
     let preFoldEnabled = false; // Player choice to auto-fold before paying pre-flop buy-in
+    let preBuyInConfirmed = false; // Player choice to pre-confirm the $20 buy-in to play the hand
 
     // Chat state
     let unreadChatCount = 0;
@@ -1801,21 +1802,36 @@
     }
 
     // ═══════════════════════════════════════════════
-    // SECTION 7: REALTIME NETWORK RELAY (ScaleDrone + Local)
+    // ═══════════════════════════════════════════════
+    // SECTION 7: ROBUST REALTIME MULTIPLAYER SYNC
+    // (MQTT.js WebSocket Cluster + WebRTC PeerJS + BroadcastChannel)
     // ═══════════════════════════════════════════════
 
-    const SCALEDRONE_CHANNEL_ID = 'yjEbQRdoJMSrfBpT';
-    const seenMessageIds = new Set();
+    const MQTT_BROKERS = [
+        'wss://broker.emqx.io:8084/mqtt',
+        'wss://broker.hivemq.com:8884/mqtt',
+        'wss://test.mosquitto.org:8081'
+    ];
+    let currentBrokerIndex = 0;
     let localChannel = null;
-    let drone = null;
-    let loungeRoom = null;
-    let gameRoom = null;
+    let peerInstance = null;
+    let peerConnections = new Map();
+    let hostHeartbeatTimer = null;
+    const seenMessageIds = new Set();
+
+    function updateNetworkStatusUI(status, label) {
+        const badge = document.getElementById('net-status-badge');
+        if (!badge) return;
+        badge.className = 'net-status-badge ' + status;
+        const icon = status === 'online' ? '🟢 ' : (status === 'connecting' ? '🟡 ' : '🔴 ');
+        badge.innerHTML = icon + (label || (status === 'online' ? 'Sync Online' : (status === 'connecting' ? 'Connecting…' : 'Offline')));
+    }
 
     function initNetworking() {
         // 1. Local BroadcastChannel for instant same-browser / multi-tab synchronization
         try {
             if (typeof BroadcastChannel !== 'undefined' && !localChannel) {
-                localChannel = new BroadcastChannel('pocketaces_p2p_sync_v6');
+                localChannel = new BroadcastChannel('pocketaces_p2p_sync_v7');
                 localChannel.onmessage = e => {
                     if (e.data && e.data.msgId) {
                         onIncomingNetworkPayload(e.data);
@@ -1824,48 +1840,103 @@
             }
         } catch (e) {}
 
-        // 2. ScaleDrone Realtime WebSockets for cross-computer worldwide sync
+        // 2. MQTT over WebSockets (Unlimited free public broker cluster)
+        connectMQTTBroker();
+
+        // 3. Initialize PeerJS WebRTC direct connection mesh
+        initPeerJS();
+    }
+
+    function connectMQTTBroker() {
+        if (typeof mqtt === 'undefined') {
+            console.warn('MQTT.js loading, retrying in 300ms');
+            setTimeout(initNetworking, 300);
+            return;
+        }
+
+        const brokerUrl = MQTT_BROKERS[currentBrokerIndex];
+        const clientId = 'pa_' + myId.substring(0, 8) + '_' + Math.random().toString(36).substring(2, 7);
+
         try {
-            if (typeof ScaleDrone !== 'undefined' && !drone) {
-                drone = new ScaleDrone(SCALEDRONE_CHANNEL_ID, {
-                    data: { name: myName || 'Player', id: myId }
-                });
+            updateNetworkStatusUI('connecting', 'Connecting…');
+            mqttClient = mqtt.connect(brokerUrl, {
+                clientId,
+                clean: true,
+                connectTimeout: 8000,
+                reconnectPeriod: 2500,
+                keepalive: 45
+            });
 
-                drone.on('open', error => {
-                    if (error) return console.warn('ScaleDrone open err:', error);
+            mqttClient.on('connect', () => {
+                mqttConnected = true;
+                updateNetworkStatusUI('online', 'Sync Online');
+                // Subscribe to Global Lounge Chat
+                mqttClient.subscribe('pocketaces/global/lounge/v7', { qos: 0 });
 
-                    loungeRoom = drone.subscribe('observable-pocketaces-lounge-v6');
-                    loungeRoom.on('data', (data, member) => {
-                        if (data && data.msgId) {
-                            onIncomingNetworkPayload(data);
-                        }
-                    });
+                // If currently in a room, resubscribe
+                if (roomCode) {
+                    subscribeRoomMQTT(roomCode);
+                }
+            });
 
-                    if (roomCode) {
-                        subscribeScaleDroneRoom(roomCode);
+            mqttClient.on('message', (topic, message) => {
+                try {
+                    const payload = JSON.parse(message.toString());
+                    if (payload && payload.msgId) {
+                        onIncomingNetworkPayload(payload);
                     }
-                });
+                } catch (err) {}
+            });
 
-                drone.on('error', err => console.warn('ScaleDrone err:', err));
-            } else if (typeof ScaleDrone === 'undefined') {
-                setTimeout(initNetworking, 400);
-            }
+            mqttClient.on('error', (err) => {
+                console.warn('MQTT broker error on ' + brokerUrl + ':', err);
+                mqttConnected = false;
+                updateNetworkStatusUI('connecting', 'Reconnecting…');
+            });
+
+            mqttClient.on('close', () => {
+                mqttConnected = false;
+                updateNetworkStatusUI('offline', 'Reconnecting…');
+            });
+
         } catch (e) {
-            console.warn('ScaleDrone init failed:', e);
+            console.warn('MQTT init failed on ' + brokerUrl + ':', e);
+            currentBrokerIndex = (currentBrokerIndex + 1) % MQTT_BROKERS.length;
+            setTimeout(connectMQTTBroker, 2000);
         }
     }
 
-    function subscribeScaleDroneRoom(code) {
-        if (!drone) return;
+    function initPeerJS() {
+        if (typeof Peer === 'undefined') return;
         try {
-            if (gameRoom) gameRoom.unsubscribe();
-            gameRoom = drone.subscribe(`observable-pocketaces-room-${code}`);
-            gameRoom.on('data', (data, member) => {
-                if (data && data.msgId) {
-                    onIncomingNetworkPayload(data);
-                }
+            if (peerInstance) {
+                try { peerInstance.destroy(); } catch (e) {}
+            }
+            const peerId = 'pa_peer_' + myId;
+            peerInstance = new Peer(peerId, { debug: 0 });
+
+            peerInstance.on('connection', conn => {
+                conn.on('open', () => {
+                    peerConnections.set(conn.peer, conn);
+                });
+                conn.on('data', data => {
+                    if (data && data.msgId) {
+                        onIncomingNetworkPayload(data);
+                    }
+                });
+                conn.on('close', () => {
+                    peerConnections.delete(conn.peer);
+                });
             });
+
+            peerInstance.on('error', err => {});
         } catch (e) {}
+    }
+
+    function subscribeRoomMQTT(code) {
+        if (!mqttClient || !mqttConnected) return;
+        const topic = `pocketaces/rooms/${code}/#`;
+        mqttClient.subscribe(topic, { qos: 0 });
     }
 
     function broadcastRealtime(topic, data) {
@@ -1879,7 +1950,7 @@
         };
 
         seenMessageIds.add(msgId);
-        if (seenMessageIds.size > 1000) {
+        if (seenMessageIds.size > 2000) {
             const first = seenMessageIds.values().next().value;
             seenMessageIds.delete(first);
         }
@@ -1889,29 +1960,30 @@
             try { localChannel.postMessage(payload); } catch (e) {}
         }
 
-        // 2. Broadcast globally via ScaleDrone WebSocket
-        if (drone) {
+        // 2. Broadcast via MQTT WebSockets
+        if (mqttClient && mqttConnected) {
+            let mqttTopic = 'pocketaces/global/lounge/v7';
+            if (topic !== 'pocketaces_global_chat_v6' && roomCode) {
+                mqttTopic = `pocketaces/rooms/${roomCode}/${topic}`;
+            }
             try {
-                if (topic === 'pocketaces_global_chat_v6') {
-                    drone.publish({
-                        room: 'observable-pocketaces-lounge-v6',
-                        message: payload
-                    });
-                } else if (roomCode) {
-                    drone.publish({
-                        room: `observable-pocketaces-room-${roomCode}`,
-                        message: payload
-                    });
-                }
+                mqttClient.publish(mqttTopic, JSON.stringify(payload), { qos: 0 });
             } catch (e) {}
         }
+
+        // 3. Broadcast via WebRTC Peer Connections
+        peerConnections.forEach(conn => {
+            if (conn.open) {
+                try { conn.send(payload); } catch (e) {}
+            }
+        });
     }
 
     function onIncomingNetworkPayload(payload) {
         if (!payload || !payload.msgId) return;
         if (seenMessageIds.has(payload.msgId)) return;
         seenMessageIds.add(payload.msgId);
-        if (seenMessageIds.size > 1000) {
+        if (seenMessageIds.size > 2000) {
             const first = seenMessageIds.values().next().value;
             seenMessageIds.delete(first);
         }
@@ -1921,7 +1993,7 @@
 
     function handleNetworkMessage(topic, data, senderId) {
         // 1. Global Lounge Chat
-        if (topic === 'pocketaces_global_chat_v6') {
+        if (topic === 'pocketaces_global_chat_v6' || topic === 'pocketaces/global/lounge/v7') {
             if (data && data.type === 'lounge_chat') {
                 if (data.senderId !== myId) {
                     appendLoungeChatMessage(data.name, data.text, data.time, !!data.isSystem, false);
@@ -1932,8 +2004,11 @@
 
         if (!roomCode) return;
 
+        // Normalize topic name if prefixed with MQTT path
+        const normTopic = topic.replace(`pocketaces/rooms/${roomCode}/`, '');
+
         // 2. Host receiving join request from players
-        if (isHost && topic === `pocketaces_room_${roomCode}_join`) {
+        if (isHost && normTopic === `pocketaces_room_${roomCode}_join`) {
             if (data && data.type === 'join') {
                 if (data.id === myId) return;
 
@@ -1945,11 +2020,11 @@
                     return;
                 }
                 if (gameState.phase !== 'lobby') {
+                    // Send spectator / in-progress sync
                     broadcastRealtime(`pocketaces_room_${roomCode}_client_${data.id}`, {
                         type: 'error',
-                        message: 'Hand in progress. Please wait for next hand.'
+                        message: 'Hand in progress. Seating for next hand…'
                     });
-                    return;
                 }
 
                 const existing = gameState.players.find(p => p.id === data.id);
@@ -1964,7 +2039,7 @@
         }
 
         // 3. Host receiving player action, in-game chat, or leave message
-        if (isHost && topic === `pocketaces_room_${roomCode}_to_host`) {
+        if (isHost && normTopic === `pocketaces_room_${roomCode}_to_host`) {
             if (data && data.type === 'action') {
                 handlePlayerAction(data.playerId, data.action, data.amount);
             } else if (data && data.type === 'chat') {
@@ -1981,17 +2056,17 @@
         }
 
         // 4. Client receiving private view state or errors from host
-        if (!isHost && topic === `pocketaces_room_${roomCode}_client_${myId}`) {
+        if (!isHost && normTopic === `pocketaces_room_${roomCode}_client_${myId}`) {
             if (data && data.type === 'state') {
                 handleIncomingState(data);
             } else if (data && data.type === 'error') {
-                showToast(data.message, 'error');
+                showToast(data.message, 'info');
             }
             return;
         }
 
         // 5. Client receiving general broadcast messages (chat or public state)
-        if (!isHost && topic === `pocketaces_room_${roomCode}_to_clients`) {
+        if (!isHost && normTopic === `pocketaces_room_${roomCode}_to_clients`) {
             if (data && data.type === 'state') {
                 handleIncomingState(data);
             } else if (data && data.type === 'chat') {
@@ -2023,7 +2098,15 @@
         initGameState();
         addPlayer(myId, myName, false);
 
-        subscribeScaleDroneRoom(roomCode);
+        subscribeRoomMQTT(roomCode);
+
+        // Host periodic sync heartbeat (every 1.8s)
+        if (hostHeartbeatTimer) clearInterval(hostHeartbeatTimer);
+        hostHeartbeatTimer = setInterval(() => {
+            if (isHost && gameState) {
+                broadcastState();
+            }
+        }, 1800);
 
         viewState = makeViewState(myId);
         renderFromViewState();
@@ -2036,11 +2119,11 @@
         roomCode = code.toUpperCase();
         isHost = false;
 
-        subscribeScaleDroneRoom(roomCode);
+        subscribeRoomMQTT(roomCode);
 
         return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 8;
+            const maxAttempts = 12;
             let resolved = false;
 
             const sendJoinPing = () => {
@@ -2074,12 +2157,12 @@
                     clearInterval(interval);
                     if (!resolved) {
                         roomCode = '';
-                        reject(new Error('Table not found. Check the room code and try again.'));
+                        reject(new Error('Table not found or host offline. Check room code and try again.'));
                     }
                 } else {
                     sendJoinPing();
                 }
-            }, 750);
+            }, 650);
         });
     }
 
@@ -2217,6 +2300,49 @@
         }
     }
 
+    function updateBuyInBannerUI() {
+        const banner = document.getElementById('buyin-decision-banner');
+        if (!banner) return;
+
+        if (!viewState || viewState.phase !== 'preflop') {
+            banner.style.display = 'none';
+            return;
+        }
+
+        const me = viewState.players[viewState.myIndex];
+        if (!me || me.eliminated || me.folded || me.currentBet >= BIG_BLIND) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        banner.style.display = 'block';
+        const numEl = document.getElementById('buyin-hand-num');
+        if (numEl) numEl.textContent = viewState.handNumber;
+
+        const buyinBtn = document.getElementById('btn-banner-buyin');
+        const foldBtn = document.getElementById('btn-banner-fold');
+
+        if (buyinBtn) {
+            if (preBuyInConfirmed) {
+                buyinBtn.className = 'btn btn-buyin-primary confirmed';
+                buyinBtn.innerHTML = '✓ Buy-In Confirmed ($20)';
+            } else {
+                buyinBtn.className = 'btn btn-buyin-primary';
+                buyinBtn.innerHTML = '🃏 Buy In ($20)';
+            }
+        }
+
+        if (foldBtn) {
+            if (preFoldEnabled) {
+                foldBtn.className = 'btn btn-fold-pre active';
+                foldBtn.innerHTML = '✓ Auto-Fold Active ($0)';
+            } else {
+                foldBtn.className = 'btn btn-fold-pre';
+                foldBtn.innerHTML = '🚫 Fold ($0)';
+            }
+        }
+    }
+
     function runDealPhysicsAnimation() {
         const table = document.getElementById('poker-table');
         const dealLayer = document.getElementById('deal-layer');
@@ -2225,6 +2351,8 @@
         dealLayer.innerHTML = '';
         isDealingAnimation = true;
         visibleHoleCards = {};
+        preBuyInConfirmed = false;
+        preFoldEnabled = false;
 
         // Zero out visible cards for all players
         viewState.players.forEach(p => {
@@ -2234,8 +2362,9 @@
         // Immediately update seat cards display to 0 cards at deal start
         renderSeats();
         renderActionBar();
+        updateBuyInBannerUI();
 
-        dealerSay('♠ Dealing cards…', 3800);
+        dealerSay('♠ Dealing cards… Pick Buy In ($20) or Fold!', 4000);
         animateDealerDeal();
 
         const totalPlayers = viewState.players.length;
@@ -2316,13 +2445,20 @@
             renderHandHelper();
             renderActionBar();
 
-            // Execute auto-fold if toggled on
-            if (preFoldEnabled && viewState && viewState.phase === 'preflop') {
+            // Execute auto-action if pre-selected
+            if (viewState && viewState.phase === 'preflop') {
                 const me = viewState.players[viewState.myIndex];
                 if (viewState.myIndex === viewState.currentPlayerIndex && me && !me.folded && !me.eliminated) {
-                    sendAction('fold');
-                    preFoldEnabled = false;
-                    updatePrefoldButtonUI();
+                    if (preBuyInConfirmed) {
+                        preBuyInConfirmed = false;
+                        updateBuyInBannerUI();
+                        sendAction('call');
+                    } else if (preFoldEnabled) {
+                        preFoldEnabled = false;
+                        updateBuyInBannerUI();
+                        updatePrefoldButtonUI();
+                        sendAction('fold');
+                    }
                 }
             }
         }, totalDealDuration);
@@ -2564,6 +2700,9 @@
         const bar = document.getElementById('action-bar');
         if (!bar) return;
 
+        updateBuyInBannerUI();
+        updatePrefoldButtonUI();
+
         if (!viewState || viewState.phase === 'lobby' || viewState.phase === 'showdown' ||
             viewState.phase === 'handEnd' || viewState.phase === 'gameOver') {
             bar.style.display = 'none';
@@ -2575,8 +2714,6 @@
             bar.style.display = 'none';
             return;
         }
-
-        updatePrefoldButtonUI();
 
         const isMyTurn = viewState.myIndex === viewState.currentPlayerIndex;
         const isPreflop = viewState.phase === 'preflop';
@@ -2616,11 +2753,21 @@
             return;
         }
 
-        if (preFoldEnabled && isPreflop) {
-            preFoldEnabled = false;
-            updatePrefoldButtonUI();
-            sendAction('fold');
-            return;
+        // Auto-action if pre-selected
+        if (isPreflop) {
+            if (preBuyInConfirmed) {
+                preBuyInConfirmed = false;
+                updateBuyInBannerUI();
+                sendAction('call');
+                return;
+            }
+            if (preFoldEnabled) {
+                preFoldEnabled = false;
+                updateBuyInBannerUI();
+                updatePrefoldButtonUI();
+                sendAction('fold');
+                return;
+            }
         }
 
         bar.style.display = 'flex';
@@ -2632,10 +2779,16 @@
         const callAmt = viewState.highestBet - me.currentBet;
         const canCheck = callAmt <= 0;
 
-        if (canCheck) {
+        if (isPreflop && me.currentBet < BIG_BLIND) {
+            foldBtn.textContent = '🚫 Fold ($0)';
+            checkCallBtn.textContent = '🃏 Buy In $20';
+            checkCallBtn.className = 'btn btn-call btn-buyin-primary';
+        } else if (canCheck) {
+            foldBtn.textContent = 'Fold';
             checkCallBtn.textContent = 'Check';
             checkCallBtn.className = 'btn btn-check';
         } else {
+            foldBtn.textContent = 'Fold';
             const actual = Math.min(callAmt, me.chips);
             checkCallBtn.textContent = `Call $${actual}`;
             checkCallBtn.className = 'btn btn-call';
@@ -3037,6 +3190,50 @@
                 soundEnabled = !soundEnabled;
                 e.target.textContent = soundEnabled ? '🔊' : '🔇';
                 showToast(soundEnabled ? 'Sound effects enabled' : 'Sound effects muted', 'info');
+            });
+        }
+
+        // ─ Pre-Flop First Decision Banner Actions ─
+        const bannerBuyinBtn = document.getElementById('btn-banner-buyin');
+        if (bannerBuyinBtn) {
+            bannerBuyinBtn.addEventListener('click', () => {
+                preBuyInConfirmed = !preBuyInConfirmed;
+                preFoldEnabled = false;
+                updateBuyInBannerUI();
+                updatePrefoldButtonUI();
+
+                if (preBuyInConfirmed && viewState && viewState.phase === 'preflop') {
+                    const me = viewState.players[viewState.myIndex];
+                    if (viewState.myIndex === viewState.currentPlayerIndex && me && !me.folded && !me.eliminated) {
+                        sendAction('call');
+                        preBuyInConfirmed = false;
+                        updateBuyInBannerUI();
+                    } else {
+                        showToast('Buy-in of $20 confirmed! Entering hand.', 'success');
+                    }
+                }
+            });
+        }
+
+        const bannerFoldBtn = document.getElementById('btn-banner-fold');
+        if (bannerFoldBtn) {
+            bannerFoldBtn.addEventListener('click', () => {
+                preFoldEnabled = !preFoldEnabled;
+                preBuyInConfirmed = false;
+                updateBuyInBannerUI();
+                updatePrefoldButtonUI();
+
+                if (preFoldEnabled && viewState && viewState.phase === 'preflop') {
+                    const me = viewState.players[viewState.myIndex];
+                    if (viewState.myIndex === viewState.currentPlayerIndex && me && !me.folded && !me.eliminated) {
+                        sendAction('fold');
+                        preFoldEnabled = false;
+                        updateBuyInBannerUI();
+                        updatePrefoldButtonUI();
+                    } else {
+                        showToast('Fold selected. You will sit out this hand at $0 cost.', 'info');
+                    }
+                }
             });
         }
 

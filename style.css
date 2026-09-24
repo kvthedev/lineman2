@@ -1949,6 +1949,130 @@ input[type="text"]::placeholder, input[type="password"]::placeholder { color: va
     to   { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+/* ─── MULTIPLAYER NETWORK STATUS BADGE ─────────── */
+.net-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    transition: all 0.25s ease;
+}
+.net-status-badge.online {
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #2ecc71;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+}
+.net-status-badge.connecting {
+    background: rgba(241, 196, 15, 0.15);
+    border: 1px solid rgba(241, 196, 15, 0.4);
+    color: #f1c40f;
+    animation: pulse 1.2s infinite ease-in-out;
+}
+.net-status-badge.offline {
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    color: #e74c3c;
+}
+
+/* ─── HAND BUY-IN / PRE-FLOP DECISION BANNER ────── */
+.buyin-decision-banner {
+    position: absolute;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 15, 24, 0.94);
+    border: 1.5px solid rgba(241, 196, 15, 0.45);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.65), 0 0 20px rgba(241, 196, 15, 0.2);
+    border-radius: 14px;
+    padding: 10px 20px;
+    z-index: 25;
+    backdrop-filter: blur(12px);
+    animation: bannerPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bannerPop {
+    from { transform: translate(-50%, 20px) scale(0.92); opacity: 0; }
+    to   { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+.buyin-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.buyin-badge-icon {
+    font-size: 24px;
+}
+.buyin-banner-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+.buyin-banner-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 0.3px;
+}
+.buyin-banner-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.buyin-banner-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-buyin-primary {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+    transition: all 0.2s ease;
+}
+.btn-buyin-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(46, 204, 113, 0.6);
+    filter: brightness(1.1);
+}
+.btn-buyin-primary.confirmed {
+    background: linear-gradient(135deg, #16a085, #1abc9c);
+    border-color: #1dd1a1;
+}
+
+.btn-fold-pre {
+    background: rgba(231, 76, 60, 0.15);
+    color: #ff7675;
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-fold-pre:hover {
+    background: var(--red);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+.btn-fold-pre.active {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(231, 76, 60, 0.5);
+}
+
 .btn-prefold {
     background: rgba(231, 76, 60, 0.15);
     border: 1px dashed var(--red);
