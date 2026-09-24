@@ -257,6 +257,8 @@
     let nextHandTimer = null;
     let soundEnabled = false;
     let isDealingAnimation = false;
+    let visibleHoleCards = {}; // Maps playerId -> count of hole cards visibly slid to seat (0, 1, or 2)
+    let preFoldEnabled = false; // Player choice to auto-fold before paying pre-flop buy-in
 
     // Chat state
     let unreadChatCount = 0;
@@ -1036,15 +1038,15 @@
     function getSeatLayout(count) {
         const layouts = {
             1:  [0],
-            2:  [0, 6],
-            3:  [0, 4, 8],
-            4:  [0, 3, 6, 9],
-            5:  [0, 2, 5, 7, 10],
-            6:  [0, 2, 4, 6, 8, 10],
-            7:  [0, 2, 4, 5, 7, 8, 10],
-            8:  [0, 1, 3, 5, 6, 7, 9, 11],
-            9:  [0, 1, 3, 4, 6, 7, 8, 10, 11],
-            10: [0, 1, 2, 4, 5, 6, 7, 8, 10, 11],
+            2:  [0, 2],
+            3:  [0, 2, 10],
+            4:  [0, 1, 3, 10],
+            5:  [0, 1, 3, 9, 11],
+            6:  [0, 1, 2, 4, 8, 10],
+            7:  [0, 1, 2, 4, 8, 10, 11],
+            8:  [0, 1, 2, 3, 7, 8, 9, 11],
+            9:  [0, 1, 2, 3, 5, 7, 8, 9, 10],
+            10: [0, 1, 2, 3, 4, 7, 8, 9, 10, 11],
             11: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
             12: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         };
@@ -1248,7 +1250,8 @@
         if (getActiveCanAct().length <= 1) {
             setTimeout(() => dealRemainingAndShowdown(), 1200);
         } else {
-            checkBotTurn();
+            const dealTransitTime = getActivePlayers().length * 2 * 300 + 450;
+            setTimeout(() => checkBotTurn(), dealTransitTime);
         }
     }
 
@@ -2200,6 +2203,20 @@
         }
     }
 
+    function updatePrefoldButtonUI() {
+        const btn = document.getElementById('btn-prefold');
+        if (!btn) return;
+        if (preFoldEnabled) {
+            btn.classList.add('active');
+            btn.innerHTML = '🚫 Auto-Fold: <strong>ON</strong>';
+            btn.title = 'Auto-fold before paying $20 buy-in is active (Click to cancel)';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '🚫 Fold Pre-Flop ($20)';
+            btn.title = 'Fold immediately before paying $20 pre-flop buy-in';
+        }
+    }
+
     function runDealPhysicsAnimation() {
         const table = document.getElementById('poker-table');
         const dealLayer = document.getElementById('deal-layer');
@@ -2207,20 +2224,33 @@
 
         dealLayer.innerHTML = '';
         isDealingAnimation = true;
+        visibleHoleCards = {};
 
-        dealerSay('♠ Shuffling & dealing hole cards…', 3800);
+        // Zero out visible cards for all players
+        viewState.players.forEach(p => {
+            visibleHoleCards[p.id] = 0;
+        });
+
+        // Immediately update seat cards display to 0 cards at deal start
+        renderSeats();
+        renderActionBar();
+
+        dealerSay('♠ Dealing cards…', 3800);
         animateDealerDeal();
 
         const totalPlayers = viewState.players.length;
         const layout = getSeatLayout(totalPlayers);
-
         const tableRect = table.getBoundingClientRect();
-        // Cards physically originate from the Casino Dealer Station at the top center
+
+        // Originates from the Casino Dealer deck at the top center
         const startX = tableRect.width / 2;
         const startY = 34;
 
-        let delayIndex = 0;
+        let stepIndex = 0;
+        const cardInterval = 300; // Realistic sliding rhythm
+        const slideDuration = 340; // Transit time gliding across felt
 
+        // Deal 2 cards round by round clockwise
         for (let round = 0; round < 2; round++) {
             for (let offset = 0; offset < totalPlayers; offset++) {
                 const pIdx = (viewState.myIndex + offset) % totalPlayers;
@@ -2233,40 +2263,69 @@
 
                 const seatRect = seatEl.getBoundingClientRect();
                 const targetX = (seatRect.left + seatRect.width / 2) - tableRect.left;
-                const targetY = (seatRect.top + seatRect.height / 2) - tableRect.top;
+                const targetY = (seatRect.top + 28) - tableRect.top;
 
-                const currentDelay = delayIndex * 450;
-                delayIndex++;
+                const currentDelay = stepIndex * cardInterval;
+                stepIndex++;
 
                 setTimeout(() => {
+                    if (!isDealingAnimation) return;
                     playDealSound();
                     animateDealerDeal();
+
                     const flyingCard = document.createElement('div');
                     flyingCard.className = 'flying-card';
-                    flyingCard.style.left = `${startX - 23}px`;
-                    flyingCard.style.top = `${startY - 16}px`;
-                    flyingCard.style.transform = `scale(0.7) rotate(${Math.random() * 20 - 10}deg)`;
+                    flyingCard.style.left = `${startX - 18}px`;
+                    flyingCard.style.top = `${startY}px`;
+                    flyingCard.style.transform = `scale(0.65) rotate(${Math.random() * 20 - 10}deg)`;
 
                     dealLayer.appendChild(flyingCard);
 
+                    // Physical glide across felt
                     requestAnimationFrame(() => {
-                        flyingCard.style.left = `${targetX - 23}px`;
-                        flyingCard.style.top = `${targetY - 32}px`;
-                        flyingCard.style.transform = `scale(1) rotate(${offset === 0 ? 0 : (Math.random() * 16 - 8)}deg)`;
+                        flyingCard.style.left = `${targetX - 18}px`;
+                        flyingCard.style.top = `${targetY - 26}px`;
+                        flyingCard.style.transform = `scale(1) rotate(${offset === 0 ? 0 : (Math.random() * 14 - 7)}deg)`;
                     });
 
+                    // On landing in the player's seat slot
                     setTimeout(() => {
                         playSnapSound();
                         flyingCard.remove();
-                    }, 650);
+                        visibleHoleCards[p.id] = (visibleHoleCards[p.id] || 0) + 1;
+                        renderSeats();
+
+                        if (pIdx === viewState.myIndex && visibleHoleCards[p.id] === 2) {
+                            renderHandHelper();
+                        }
+                    }, slideDuration);
                 }, currentDelay);
             }
         }
 
+        const totalDealDuration = stepIndex * cardInterval + slideDuration + 120;
         setTimeout(() => {
             isDealingAnimation = false;
             dealLayer.innerHTML = '';
-        }, delayIndex * 450 + 750);
+            if (viewState) {
+                viewState.players.forEach(p => {
+                    visibleHoleCards[p.id] = p.cards ? p.cards.length : (p.hasCards ? 2 : 0);
+                });
+            }
+            renderSeats();
+            renderHandHelper();
+            renderActionBar();
+
+            // Execute auto-fold if toggled on
+            if (preFoldEnabled && viewState && viewState.phase === 'preflop') {
+                const me = viewState.players[viewState.myIndex];
+                if (viewState.myIndex === viewState.currentPlayerIndex && me && !me.folded && !me.eliminated) {
+                    sendAction('fold');
+                    preFoldEnabled = false;
+                    updatePrefoldButtonUI();
+                }
+            }
+        }, totalDealDuration);
     }
 
     // ═══════════════════════════════════════════════
@@ -2444,16 +2503,29 @@
 
             const av = getAvatar(p);
 
-            let cardsHtml = '';
-            if (p.cards && p.cards.length > 0) {
-                cardsHtml = '<div class="seat-cards">' +
-                    p.cards.map(c => makeCard(c, false, 'hole card-arrive').outerHTML).join('') +
-                    '</div>';
+            // Determine visible cards count during deal vs regular gameplay
+            let cardCount = 0;
+            if (isDealingAnimation) {
+                cardCount = visibleHoleCards[p.id] !== undefined ? visibleHoleCards[p.id] : 0;
+            } else if (p.cards && p.cards.length > 0) {
+                cardCount = p.cards.length;
             } else if (p.hasCards && !p.folded) {
-                cardsHtml = '<div class="seat-cards">' +
-                    '<div class="card card-back card-arrive"></div>' +
-                    '<div class="card card-back card-arrive"></div>' +
-                    '</div>';
+                cardCount = 2;
+            }
+
+            let cardsHtml = '';
+            if (cardCount > 0 && !p.folded) {
+                if (p.cards && p.cards.length > 0) {
+                    cardsHtml = '<div class="seat-cards">' +
+                        p.cards.slice(0, cardCount).map(c => makeCard(c, false, 'hole card-arrive').outerHTML).join('') +
+                        '</div>';
+                } else if (p.hasCards) {
+                    let backs = '';
+                    for (let k = 0; k < cardCount; k++) {
+                        backs += '<div class="card card-back card-arrive"></div>';
+                    }
+                    cardsHtml = '<div class="seat-cards">' + backs + '</div>';
+                }
             }
 
             const dealerHtml = p.isDealer ? '<div class="dealer-button" title="Dealer">D</div>' : '';
@@ -2490,6 +2562,7 @@
 
     function renderActionBar() {
         const bar = document.getElementById('action-bar');
+        if (!bar) return;
 
         if (!viewState || viewState.phase === 'lobby' || viewState.phase === 'showdown' ||
             viewState.phase === 'handEnd' || viewState.phase === 'gameOver') {
@@ -2498,18 +2571,66 @@
         }
 
         const me = viewState.players[viewState.myIndex];
-        const isMyTurn = viewState.myIndex === viewState.currentPlayerIndex;
-
-        if (!me || !isMyTurn || me.folded || me.eliminated || me.allIn) {
+        if (!me || me.eliminated) {
             bar.style.display = 'none';
             return;
         }
 
+        updatePrefoldButtonUI();
+
+        const isMyTurn = viewState.myIndex === viewState.currentPlayerIndex;
+        const isPreflop = viewState.phase === 'preflop';
+
+        const foldBtn = document.getElementById('btn-fold');
+        const checkCallBtn = document.getElementById('btn-check-call');
+        const raiseSection = document.getElementById('raise-section');
+        const allinBtn = document.getElementById('btn-allin');
+        const prefoldBtn = document.getElementById('btn-prefold');
+
+        if (isDealingAnimation) {
+            bar.style.display = 'flex';
+            if (foldBtn) foldBtn.style.display = 'none';
+            if (checkCallBtn) checkCallBtn.style.display = 'none';
+            if (raiseSection) raiseSection.style.display = 'none';
+            if (allinBtn) allinBtn.style.display = 'none';
+            if (prefoldBtn) prefoldBtn.style.display = 'inline-flex';
+            return;
+        }
+
+        if (me.folded || me.allIn) {
+            bar.style.display = 'none';
+            return;
+        }
+
+        if (!isMyTurn) {
+            if (isPreflop) {
+                bar.style.display = 'flex';
+                if (foldBtn) foldBtn.style.display = 'none';
+                if (checkCallBtn) checkCallBtn.style.display = 'none';
+                if (raiseSection) raiseSection.style.display = 'none';
+                if (allinBtn) allinBtn.style.display = 'none';
+                if (prefoldBtn) prefoldBtn.style.display = 'inline-flex';
+            } else {
+                bar.style.display = 'none';
+            }
+            return;
+        }
+
+        if (preFoldEnabled && isPreflop) {
+            preFoldEnabled = false;
+            updatePrefoldButtonUI();
+            sendAction('fold');
+            return;
+        }
+
         bar.style.display = 'flex';
+        if (prefoldBtn) prefoldBtn.style.display = isPreflop ? 'inline-flex' : 'none';
+        if (foldBtn) foldBtn.style.display = 'inline-flex';
+        if (checkCallBtn) checkCallBtn.style.display = 'inline-flex';
+        if (allinBtn) allinBtn.style.display = 'inline-flex';
 
         const callAmt = viewState.highestBet - me.currentBet;
         const canCheck = callAmt <= 0;
-        const checkCallBtn = document.getElementById('btn-check-call');
 
         if (canCheck) {
             checkCallBtn.textContent = 'Check';
@@ -2520,24 +2641,25 @@
             checkCallBtn.className = 'btn btn-call';
         }
 
-        const raiseSection = document.getElementById('raise-section');
         const minR = Math.max(viewState.minRaise, viewState.highestBet + BIG_BLIND);
         const maxR = me.chips + me.currentBet;
 
         if (minR >= maxR || me.chips <= callAmt) {
-            raiseSection.style.display = 'none';
+            if (raiseSection) raiseSection.style.display = 'none';
         } else {
-            raiseSection.style.display = 'flex';
-            const slider = document.getElementById('raise-slider');
-            slider.min = minR;
-            slider.max = maxR;
-            if (+slider.value < minR) slider.value = minR;
-            if (+slider.value > maxR) slider.value = maxR;
-            slider.step = BIG_BLIND;
-            document.getElementById('btn-raise').textContent = `Raise to $${slider.value}`;
+            if (raiseSection) {
+                raiseSection.style.display = 'flex';
+                const slider = document.getElementById('raise-slider');
+                slider.min = minR;
+                slider.max = maxR;
+                if (+slider.value < minR) slider.value = minR;
+                if (+slider.value > maxR) slider.value = maxR;
+                slider.step = BIG_BLIND;
+                document.getElementById('btn-raise').textContent = `Raise to $${slider.value}`;
+            }
         }
 
-        document.getElementById('btn-allin').textContent = `All In ($${me.chips})`;
+        if (allinBtn) allinBtn.textContent = `All In ($${me.chips})`;
     }
 
     function renderResults() {
@@ -2919,6 +3041,22 @@
         }
 
         // ─ Poker Actions ─
+        const prefoldBtn = document.getElementById('btn-prefold');
+        if (prefoldBtn) {
+            prefoldBtn.addEventListener('click', () => {
+                preFoldEnabled = !preFoldEnabled;
+                updatePrefoldButtonUI();
+                if (preFoldEnabled && viewState && viewState.phase === 'preflop') {
+                    const me = viewState.players[viewState.myIndex];
+                    if (viewState.myIndex === viewState.currentPlayerIndex && me && !me.folded && !me.eliminated) {
+                        sendAction('fold');
+                        preFoldEnabled = false;
+                        updatePrefoldButtonUI();
+                    }
+                }
+            });
+        }
+
         document.getElementById('btn-fold').addEventListener('click', () => sendAction('fold'));
 
         document.getElementById('btn-check-call').addEventListener('click', () => {

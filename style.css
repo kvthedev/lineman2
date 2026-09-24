@@ -1545,18 +1545,18 @@ input[type="text"]::placeholder, input[type="password"]::placeholder { color: va
 }
 
 /* Seat positions around the spacious oval for up to 12 players */
-.seat-pos-0  { bottom: -68px; left: 50%; transform: translateX(-50%); }
-.seat-pos-1  { bottom: 5%;   right: -55px; }
-.seat-pos-2  { bottom: 26%;  right: -95px; }
-.seat-pos-3  { top: 50%;     right: -110px; transform: translateY(-50%); }
-.seat-pos-4  { top: 26%;     right: -95px; }
-.seat-pos-5  { top: 5%;      right: -55px; }
-.seat-pos-6  { top: -68px;   left: 50%; transform: translateX(-50%); }
-.seat-pos-7  { top: 5%;      left: -55px; }
-.seat-pos-8  { top: 26%;     left: -95px; }
-.seat-pos-9  { top: 50%;     left: -110px; transform: translateY(-50%); }
-.seat-pos-10 { bottom: 26%;  left: -95px; }
-.seat-pos-11 { bottom: 5%;   left: -55px; }
+.seat-pos-0  { bottom: -66px; left: 50%; transform: translateX(-50%); }
+.seat-pos-1  { bottom: 6%;   right: -50px; }
+.seat-pos-2  { bottom: 26%;  right: -90px; }
+.seat-pos-3  { top: 50%;     right: -105px; transform: translateY(-50%); }
+.seat-pos-4  { top: 26%;     right: -90px; }
+.seat-pos-5  { top: 6%;      right: -50px; }
+.seat-pos-6  { top: -60px;   right: 18%; }
+.seat-pos-7  { top: 6%;      left: -50px; }
+.seat-pos-8  { top: 26%;     left: -90px; }
+.seat-pos-9  { top: 50%;     left: -105px; transform: translateY(-50%); }
+.seat-pos-10 { bottom: 26%;  left: -90px; }
+.seat-pos-11 { bottom: 6%;   left: -50px; }
 
 /* Floating Seat Speech Bubble */
 .seat-speech-bubble {
@@ -1919,33 +1919,55 @@ input[type="text"]::placeholder, input[type="password"]::placeholder { color: va
 
 .flying-card {
     position: absolute;
-    width: 46px;
-    height: 64px;
-    border-radius: 5px;
+    width: 36px;
+    height: 52px;
+    border-radius: 4px;
     background:
         repeating-linear-gradient(
             45deg,
             rgba(255,255,255,0.06),
-            rgba(255,255,255,0.06) 4px,
-            transparent 4px,
-            transparent 8px
+            rgba(255,255,255,0.06) 3px,
+            transparent 3px,
+            transparent 6px
         ),
         linear-gradient(135deg, #1e3c72, #2a5298);
-    border: 2px solid #e6b33e;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    transition: left 0.65s cubic-bezier(0.22, 0.61, 0.36, 1),
-                top 0.65s cubic-bezier(0.22, 0.61, 0.36, 1),
-                transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
-    z-index: 16;
+    border: 1.5px solid #e6b33e;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 2px 6px rgba(0,0,0,0.4);
+    transition: left 0.38s cubic-bezier(0.25, 0.9, 0.35, 1),
+                top 0.38s cubic-bezier(0.25, 0.9, 0.35, 1),
+                transform 0.38s cubic-bezier(0.25, 0.9, 0.35, 1);
+    z-index: 18;
+    pointer-events: none;
 }
 
 /* Card "arrive" animation for seat cards after deal */
 .card-arrive {
-    animation: cardArrive 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: cardArrive 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes cardArrive {
-    from { transform: scale(0.4) rotateY(60deg); opacity: 0; }
-    to   { transform: scale(1) rotateY(0deg); opacity: 1; }
+    from { transform: scale(0.3) translateY(-10px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.btn-prefold {
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px dashed var(--red);
+    color: #ff7675;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-prefold:hover {
+    background: rgba(231, 76, 60, 0.3);
+    color: #fff;
+}
+.btn-prefold.active {
+    background: var(--red);
+    color: #fff;
+    border-style: solid;
+    box-shadow: 0 0 12px rgba(231, 76, 60, 0.5);
 }
 
 /* ─── ACTION BAR ────────────────────────────────── */
@@ -2244,7 +2266,7 @@ input[type="range"]::-moz-range-thumb {
     }
 
     .seat-pos-0 { bottom: -60px; }
-    .seat-pos-6 { top: -60px; }
+    .seat-pos-6 { top: -55px; right: 15%; left: auto; }
     .seat-pos-1, .seat-pos-5 { right: -35px; }
     .seat-pos-2, .seat-pos-4 { right: -65px; }
     .seat-pos-3 { right: -75px; }
